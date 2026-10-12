@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الدفعة 151 — مؤسسة التدريبات العقلية</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#0d4f4f; --navy-dark:#0a4040; --gold:#c9a24a; --gold-light:#fbf4e2;
+  --green:#1e8449; --green-light:#edf7f0; --red:#c0392b; --red-light:#fdf0ef;
+  --ink:#20303a; --muted:#5a6b74; --line:#d5e2e2; --alt:#f3f8f8; --page:#eef3f3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color:var(--ink);min-height:100vh}
+.header{background:linear-gradient(135deg,var(--navy),var(--navy-dark));color:#fff;padding:26px 20px 22px;text-align:center}
+.header .org{color:var(--gold);font-size:13px;letter-spacing:1px;margin-bottom:6px}
+.header h1{font-size:25px;margin-bottom:8px}
+.header .sub{font-size:13.5px;opacity:.9}
+.chip{display:inline-block;margin-top:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 16px;font-size:14px}
+.chip b{color:var(--gold);font-size:17px}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 14px 60px}
+.banner{border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;display:none}
+.banner.bad{display:block;background:var(--red-light);color:var(--red);border:1px solid var(--red)}
+.banner.warn{display:block;background:var(--gold-light);color:#8a6d1f;border:1px solid var(--gold)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
+.toolbar .meta{font-size:12.5px;color:var(--muted)}
+.btn{background:var(--gold);color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:14px;font-family:inherit;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.card{background:#fff;border-top:4px solid var(--navy);border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card.gold{border-top-color:var(--gold)}
+.card .num{font-size:28px;font-weight:700;color:var(--navy);direction:ltr;text-align:right}
+.card.gold .num{color:var(--gold)}
+.card .lbl{font-size:13px;color:var(--muted);margin-top:4px}
+.card .sub{font-size:12.5px;margin-top:6px;color:var(--muted)}
+.good{color:var(--green)!important}.bad{color:var(--red)!important}
+.panel{background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:16px}
+.panel h3{color:var(--navy);font-size:16.5px;margin-bottom:12px;border-bottom:2px solid var(--gold);padding-bottom:7px;display:inline-block}
+.panel .hint{font-size:12.5px;color:var(--muted);margin:-4px 0 10px}
+.prog-lbl{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px;flex-wrap:wrap;gap:6px}
+.prog{position:relative;background:var(--alt);border-radius:20px;height:22px;border:1px solid var(--line);overflow:visible}
+.prog-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--navy),var(--gold));transition:width .8s ease}
+.prog-mark{position:absolute;top:-5px;width:3px;height:30px;background:var(--red);border-radius:2px}
+.prog-legend{font-size:12px;color:var(--muted);margin-top:8px}
+.prog-legend span{display:inline-block;width:10px;height:10px;background:var(--red);border-radius:2px;margin-inline-end:4px;vertical-align:middle}
+.chart-box{position:relative;height:300px}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--navy);color:#fff;padding:9px 7px;font-weight:600;white-space:nowrap}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{background:var(--navy-dark)}
+td{padding:8px 7px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+td.name{text-align:right;font-weight:600}
+tbody tr:nth-child(even){background:var(--alt)}
+tr.dim td{color:#98a6ad}
+.tot td{font-weight:700;background:var(--gold-light)!important}
+.up{color:var(--green);font-weight:700}.down{color:var(--red);font-weight:700}.flat{color:#98a6ad}
+.empty{color:var(--muted);padding:18px;text-align:center}
+.footer{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.9}
+@media(max-width:600px){.header h1{font-size:20px}.card .num{font-size:23px}table{font-size:12.5px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="org">مؤسسة التدريبات العقلية</div>
+  <h1>لوحة قيادة الدفعة 151</h1>
+  <div class="sub" id="hdrSub">جاري التحميل…</div>
+  <div class="chip" id="chip">—</div>
+</div>
+
+<div class="wrap">
+  <div class="banner" id="banner"></div>
+
+  <div class="toolbar">
+    <div class="meta" id="metaLine">—</div>
+    <button class="btn" onclick="loadAll()">⟳ تحديث</button>
+  </div>
+
+  <div class="cards">
+    <div class="card gold"><div class="num" id="cRegs">—</div><div class="lbl">إجمالي التسجيلات</div><div class="sub" id="cRegsSub"></div></div>
+    <div class="card"><div class="num" id="cSpend">—</div><div class="lbl">إجمالي الصرف</div><div class="sub" id="cSpendSub"></div></div>
+    <div class="card gold"><div class="num" id="cCpa">—</div><div class="lbl">تكلفة المتدرب (CPA)</div><div class="sub" id="cCpaSub"></div></div>
+    <div class="card"><div class="num" id="cGw">—</div><div class="lbl">تسجيلات بوابة الدفع</div><div class="sub" id="cGwSub"></div></div>
+    <div class="card"><div class="num" id="cPace">—</div><div class="lbl">المعدل الفعلي (آخر 7 أيام)</div><div class="sub" id="cPaceSub"></div></div>
+  </div>
+
+  <div class="panel">
+    <h3>التقدّم نحو الهدف</h3>
+    <div class="prog-lbl"><span id="pLbl">—</span><span id="pExp"></span></div>
+    <div class="prog"><div class="prog-fill" id="pFill" style="width:0%"></div><div class="prog-mark" id="pMark" style="right:0%"></div></div>
+    <div class="prog-legend"><span></span>المفروض نكون وصلناله النهارده لو المسار خطي</div>
+  </div>
+
+  <div class="panel">
+    <h3>المسار: التراكمي الفعلي مقابل خط الهدف</h3>
+    <div class="chart-box"><canvas id="chartPath"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h3>الأسواق</h3>
+    <div class="hint">البوابة والباي بال أعمدة منفصلة عن المباشر. الصرف من 12/10 حسب بلد عرض الإعلان. الاتجاه = آخر 7 أيام مقابل الـ7 اللي قبلها. اضغط على العنوان للترتيب.</div>
+    <div class="tbl-scroll"><table>
+      <thead><tr id="mHead">
+        <th class="sortable" data-k="market">السوق</th>
+        <th class="sortable" data-k="direct_regs">مباشر</th>
+        <th class="sortable" data-k="gateway_regs">بوابة</th>
+        <th class="sortable" data-k="paypal_regs">باي بال</th>
+        <th class="sortable" data-k="total_regs">الإجمالي</th>
+        <th class="sortable" data-k="spend">الصرف</th>
+        <th class="sortable" data-k="cpa">CPA</th>
+        <th class="sortable" data-k="last7">آخر 7 أيام</th>
+        <th>الاتجاه</th>
+      </tr></thead>
+      <tbody id="mBody"></tbody>
+    </table></div>
+  </div>
+
+  <div class="panel">
+    <h3>السجل اليومي</h3>
+    <div class="hint">صرف اليوم بيتسحب الصبح اللي بعده — فآخر يوم بيظهر صرفه صفر لحد المزامنة.</div>
+    <div class="tbl-scroll"><table>
+      <thead><tr>
+        <th>التاريخ</th><th>تسجيلات</th><th>منها بوابة</th><th>الصرف</th><th>CPA اليوم</th>
+        <th>التراكمي</th><th>CPA التراكمي</th><th>المطلوب/يوم</th>
+      </tr></thead>
+      <tbody id="dBody"></tbody>
+    </table></div>
+  </div>
+
+  <div class="footer" id="footer">مصدر البيانات: Supabase (قراءة فقط) · الصرف: مزامنة Meta اليومية · التسجيلات: الإدخال اليومي</div>
+</div>
+
+<script>
+const SB = 'https://vrrpkgcghtcfyfilwwzs.supabase.co/rest/v1/';
+const KEY = 'sb_publishable_R_Eeql_At_TFGhJ_DchDHA_Dc3SrPdw';
+
+let state = {cfg:{}, daily:[], markets:[], md:[], sync:null};
+let mSort = {k:'total_regs', dir:-1};
+let chart = null;
+
+/* ---------- helpers ---------- */
+async function q(path){
+  const r = await fetch(SB + path, {headers:{apikey:KEY}});
+  if (!r.ok) throw new Error(path.split('?')[0] + ' → ' + r.status);
+  return r.json();
+}
+const N = v => Number(v) || 0;
+const fmtInt = v => N(v).toLocaleString('en-US');
+const fmtMoney = v => '$' + N(v).toLocaleString('en-US', {maximumFractionDigits:0});
+const fmtMoney1 = v => v == null ? '—' : '$' + N(v).toFixed(1);
+function cairoToday(){
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'Africa/Cairo', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
+}
+function addDays(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); }
+function diffDays(a, b){ return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000); }
+function dShort(s){ const [y,m,d] = s.split('-'); return +d + '/' + +m; }
+
+/* ---------- load ---------- */
+async function loadAll(){
+  const banner = document.getElementById('banner');
+  banner.className = 'banner'; banner.textContent = '';
+  try {
+    const today = cairoToday();
+    const [cfgRows, daily, markets, sync, md] = await Promise.all([
+      q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,token_expiry)'),
+      q('b151_daily_v1?select=*&order=date.asc'),
+      q('b151_markets_v1?select=*'),
+      q('sync_runs?select=started_at,until&status=eq.success&run_mode=eq.production&order=started_at.desc&limit=1'),
+      q('b151_market_daily_v1?select=date,market,total_regs&date=gte.' + addDays(today, -14))
+    ]);
+    state.cfg = Object.fromEntries(cfgRows.map(r => [r.key, r.value]));
+    state.daily = daily; state.markets = markets; state.md = md; state.sync = sync[0] || null;
+    render(today);
+  } catch (e) {
+    banner.className = 'banner bad';
+    banner.textContent = '✖ تعذّر تحميل البيانات: ' + e.message;
+  }
+}
+
+/* ---------- render ---------- */
+function render(today){
+  const c = state.cfg;
+  const start = c.b151_start, close = c.b151_close, evalEnd = c.b151_eval_end, target = N(c.b151_target) || 5000;
+  const totalDays = diffDays(start, close) + 1;
+  const elapsed = Math.max(0, Math.min(diffDays(start, today) + 1, totalDays));
+  const remDays = diffDays(today, close) + 1;
+  const inEval = diffDays(close, today) > 0;
+
+  // header
+  document.getElementById('hdrSub').textContent =
+    `التسجيل: ${dShort(start)} – ${dShort(close)} (${totalDays} يوم) · فترة التقييم لحد ${dShort(evalEnd)} · الهدف: ${fmtInt(target)} متدرب · USD`;
+  document.getElementById('chip').innerHTML = inEval
+    ? `فترة التقييم · فاضل <b>${Math.max(diffDays(today, evalEnd) + 1, 0)}</b> يوم`
+    : `اليوم <b>${elapsed}</b> من ${totalDays} · فاضل <b>${Math.max(remDays, 0)}</b> يوم على القفل`;
+
+  // totals
+  const d = state.daily;
+  const totalRegs = d.reduce((s, r) => s + N(r.regs), 0);
+  const totalGw = d.reduce((s, r) => s + N(r.gateway_regs), 0);
+  const totalSpend = d.reduce((s, r) => s + N(r.spend), 0);
+  const spent = d.filter(r => N(r.spend) > 0);
+  const lastSpend = spent.length ? spent[spent.length - 1] : null;
+  const cpa = lastSpend && N(lastSpend.cum_regs) > 0 ? N(lastSpend.cum_spend) / N(lastSpend.cum_regs) : null;
+
+  // pace: last 7 complete days (yesterday back), inside the batch
+  const winFrom = addDays(today, -7), winTo = addDays(today, -1);
+  const win = d.filter(r => r.date >= winFrom && r.date <= winTo);
+  const pace = win.length ? win.reduce((s, r) => s + N(r.regs), 0) / win.length : null;
+  const required = remDays > 0 ? Math.max(target - totalRegs, 0) / remDays : null;
+
+  setText('cRegs', fmtInt(totalRegs));
+  setText('cRegsSub', `${(totalRegs / target * 100).toFixed(1)}% من ${fmtInt(target)}`);
+  setText('cSpend', fmtMoney(totalSpend));
+  setText('cSpendSub', lastSpend ? `حتى ${dShort(lastSpend.date)}` : 'مفيش صرف متسحب لسه');
+  setText('cCpa', cpa == null ? '—' : '$' + cpa.toFixed(1));
+  setText('cCpaSub', lastSpend ? `على الأيام اللي صرفها اتسحب (لحد ${dShort(lastSpend.date)})` : 'بيظهر بعد أول تسجيلات + صرف');
+  setText('cGw', fmtInt(totalGw));
+  setText('cGwSub', totalRegs ? `${(totalGw / totalRegs * 100).toFixed(1)}% من الإجمالي` : '—');
+  setText('cPace', pace == null ? '—' : pace.toFixed(1) + '/يوم');
+  const ps = document.getElementById('cPaceSub');
+  if (required == null) { ps.textContent = 'التسجيل اتقفل'; ps.className = 'sub'; }
+  else {
+    ps.textContent = `المطلوب: ${required.toFixed(1)}/يوم عشان نوصل ${fmtInt(target)}`;
+    ps.className = 'sub ' + (pace != null && pace >= required ? 'good' : 'bad');
+  }
+
+  // progress
+  const pct = Math.min(totalRegs / target * 100, 100);
+  const expected = target * elapsed / totalDays;
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pMark').style.right = Math.min(expected / target * 100, 100) + '%';
+  setText('pLbl', `${fmtInt(totalRegs)} / ${fmtInt(target)} (${pct.toFixed(1)}%)`);
+  const gap = totalRegs - expected;
+  const pe = document.getElementById('pExp');
+  pe.textContent = `المسار الخطي النهارده: ${fmtInt(Math.round(expected))} · ${gap >= 0 ? 'متقدمين' : 'متأخرين'} ${fmtInt(Math.abs(Math.round(gap)))}`;
+  pe.className = gap >= 0 ? 'good' : 'bad';
+
+  drawChart(start, close, target, today);
+  renderMarkets(today);
+  renderDaily(today, required);
+  renderHealth(today);
+}
+
+function setText(id, t){ document.getElementById(id).textContent = t; }
+
+function drawChart(start, close, target, today){
+  const total = diffDays(start, close) + 1;
+  const labels = [], targetLine = [], actual = [], bars = [];
+  const byDate = Object.fromEntries(state.daily.map(r => [r.date, r]));
+  let cum = 0;
+  for (let i = 0; i < total; i++){
+    const dt = addDays(start, i);
+    labels.push(dShort(dt));
+    targetLine.push(Math.round(target * (i + 1) / total));
+    if (dt <= today){
+      const r = byDate[dt]; const v = r ? N(r.regs) : 0;
+      cum += v; actual.push(cum); bars.push(v);
+    } else { actual.push(null); bars.push(null); }
+  }
+  if (chart) chart.destroy();
+  const F = {family:'"Segoe UI", Tahoma, Arial, sans-serif'};
+  chart = new Chart(document.getElementById('chartPath'), {
+    data:{labels, datasets:[
+      {type:'line', label:'التراكمي الفعلي', data:actual, borderColor:'#c9a24a', backgroundColor:'#c9a24a', borderWidth:3, pointRadius:0, tension:.25, yAxisID:'y', spanGaps:false},
+      {type:'line', label:'خط الهدف', data:targetLine, borderColor:'#1e8449', borderDash:[6,4], borderWidth:2, pointRadius:0, yAxisID:'y'},
+      {type:'bar', label:'تسجيلات اليوم', data:bars, backgroundColor:'rgba(13,79,79,.35)', yAxisID:'y1'}
+    ]},
+    options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+      plugins:{legend:{labels:{font:F}}, tooltip:{rtl:true}},
+      scales:{x:{ticks:{font:F, maxTicksLimit:12}},
+        y:{position:'right', beginAtZero:true, title:{display:true, text:'تراكمي', font:F}},
+        y1:{position:'left', beginAtZero:true, grid:{drawOnChartArea:false}, title:{display:true, text:'يومي', font:F}}}}
+  });
+}
+
+function sortMarkets(k){
+  if (mSort.k === k) mSort.dir *= -1; else { mSort.k = k; mSort.dir = k === 'market' ? 1 : -1; }
+  renderMarkets(cairoToday());
+}
+
+function renderMarkets(today){
+  const l7From = addDays(today, -7), l7To = addDays(today, -1), p7From = addDays(today, -14), p7To = addDays(today, -8);
+  const last7 = {}, prev7 = {};
+  state.md.forEach(r => {
+    if (r.date >= l7From && r.date <= l7To) last7[r.market] = (last7[r.market] || 0) + N(r.total_regs);
+    else if (r.date >= p7From && r.date <= p7To) prev7[r.market] = (prev7[r.market] || 0) + N(r.total_regs);
+  });
+  let rows = state.markets.map(m => ({
+    market:m.market, direct_regs:N(m.direct_regs), gateway_regs:N(m.gateway_regs), paypal_regs:N(m.paypal_regs),
+    total_regs:N(m.total_regs), spend:N(m.spend), cpa: N(m.total_regs) > 0 ? N(m.spend) / N(m.total_regs) : null,
+    last7: last7[m.market] || 0, prev7: prev7[m.market] || 0,
+    unmapped: String(m.market).startsWith('غير مربوط')
+  }));
+  const k = mSort.k, dir = mSort.dir;
+  rows.sort((a, b) => {
+    if (a.unmapped !== b.unmapped) return a.unmapped ? 1 : -1;
+    if (k === 'market') return dir * String(a.market).localeCompare(String(b.market), 'ar');
+    const va = a[k], vb = b[k];
+    if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1;
+    return dir * (va - vb) || (b.spend - a.spend);
+  });
+  const body = document.getElementById('mBody');
+  if (!rows.length){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش تسجيلات أو صرف للدفعة 151.</td></tr>'; return; }
+  const tot = rows.reduce((s, r) => { s.d += r.direct_regs; s.g += r.gateway_regs; s.p += r.paypal_regs; s.t += r.total_regs; s.s += r.spend; s.l += r.last7; return s; }, {d:0,g:0,p:0,t:0,s:0,l:0});
+  body.innerHTML = rows.map(r => {
+    let tr = '<span class="flat">—</span>';
+    if (r.last7 > r.prev7) tr = `<span class="up">▲ ${r.prev7}→${r.last7}</span>`;
+    else if (r.last7 < r.prev7) tr = `<span class="down">▼ ${r.prev7}→${r.last7}</span>`;
+    return `<tr class="${r.total_regs === 0 ? 'dim' : ''}">
+      <td class="name">${r.market}</td><td>${fmtInt(r.direct_regs)}</td><td>${fmtInt(r.gateway_regs)}</td><td>${fmtInt(r.paypal_regs)}</td>
+      <td><b>${fmtInt(r.total_regs)}</b></td><td>${fmtMoney(r.spend)}</td><td>${fmtMoney1(r.cpa)}</td>
+      <td>${fmtInt(r.last7)}</td><td>${tr}</td></tr>`;
+  }).join('') + `<tr class="tot"><td class="name">الإجمالي</td><td>${fmtInt(tot.d)}</td><td>${fmtInt(tot.g)}</td><td>${fmtInt(tot.p)}</td>
+      <td>${fmtInt(tot.t)}</td><td>${fmtMoney(tot.s)}</td><td>${tot.t ? fmtMoney1(tot.s / tot.t) : '—'}</td><td>${fmtInt(tot.l)}</td><td></td></tr>`;
+  document.querySelectorAll('#mHead th.sortable').forEach(th => {
+    th.onclick = () => sortMarkets(th.dataset.k);
+    th.textContent = th.textContent.replace(/ [▲▼]$/, '') + (th.dataset.k === mSort.k ? (mSort.dir === 1 ? ' ▲' : ' ▼') : '');
+  });
+}
+
+function renderDaily(today, required){
+  const rows = [...state.daily].reverse();
+  const body = document.getElementById('dBody');
+  if (!rows.length){ body.innerHTML = '<tr><td colspan="8" class="empty">لا توجد أيام بعد.</td></tr>'; return; }
+  body.innerHTML = rows.map(r => {
+    const pending = N(r.spend) === 0 && r.date >= addDays(today, -1);
+    return `<tr>
+      <td>${dShort(r.date)}${r.phase === 'eval' ? ' <small>(تقييم)</small>' : ''}</td>
+      <td><b>${fmtInt(r.regs)}</b></td><td>${fmtInt(r.gateway_regs)}</td>
+      <td>${pending ? '<small style="color:#98a6ad">يتسحب بكرة</small>' : fmtMoney(r.spend)}</td>
+      <td>${fmtMoney1(r.cpa_day)}</td><td>${fmtInt(r.cum_regs)}</td><td>${fmtMoney1(r.cum_cpa)}</td>
+      <td>${r.required_per_day == null ? '—' : N(r.required_per_day).toFixed(1)}</td></tr>`;
+  }).join('');
+}
+
+function renderHealth(today){
+  const banner = document.getElementById('banner');
+  const msgs = []; let level = '';
+  const s = state.sync;
+  if (!s){ msgs.push('مفيش أي مزامنة ناجحة مسجلة.'); level = 'bad'; }
+  else if (s.until < addDays(today, -2)){ msgs.push(`⚠ المزامنة متأخرة: آخر صرف متسحب يوم ${dShort(s.until)}. اتأكد من التوكن.`); level = 'bad'; }
+  const exp = state.cfg.token_expiry;
+  if (exp){
+    const left = diffDays(today, exp);
+    if (left <= 14){ msgs.push(`⚠ توكن Meta بينتهي ${dShort(exp)} (فاضل ${left} يوم).`); if (!level) level = 'warn'; }
+  }
+  if (msgs.length){ banner.className = 'banner ' + level; banner.textContent = msgs.join(' · '); }
+  document.getElementById('metaLine').textContent = s
+    ? `آخر مزامنة صرف ناجحة: بيانات ${dShort(s.until)} · ${new Date(s.started_at).toLocaleString('ar-EG', {timeZone:'Africa/Cairo', dateStyle:'medium', timeStyle:'short'})}`
+    : '—';
+}
+
+loadAll();
+</script>
+</body>
+</html>
