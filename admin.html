@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>إدارة المناديب — عقليات</title>
+<style>
+:root{
+  --navy:#0d4f4f; --navy-dark:#0a4040; --gold:#c9a24a; --gold-light:#fbf4e2;
+  --green:#1e8449; --green-light:#edf7f0; --red:#c0392b; --red-light:#fdf0ef;
+  --ink:#20303a; --muted:#5a6b74; --line:#d5e2e2; --alt:#f3f8f8; --page:#eef3f3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color:var(--ink);min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+.header{background:linear-gradient(135deg,var(--navy),var(--navy-dark));color:#fff;padding:20px 16px;text-align:center}
+.header .org{color:var(--gold);font-size:12.5px;margin-bottom:4px}
+.header h1{font-size:21px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 12px 40px}
+.card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:14px}
+.card h3{color:var(--navy);font-size:15.5px;margin-bottom:10px}
+label{display:block;font-size:13.5px;color:var(--muted);margin:10px 0 5px}
+input{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-size:16px;font-family:inherit;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.btn{padding:12px 18px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
+.btn.navy{background:var(--navy)}
+.btn.small{padding:7px 10px;font-size:13px;font-weight:600}
+.btn.ghost{background:#fff;color:var(--red);border:1px solid var(--red)}
+.btn.ghost.on{color:var(--green);border-color:var(--green)}
+.btn:disabled{opacity:.6;cursor:default}
+.row{display:flex;gap:10px;align-items:flex-end}
+.row > div{flex:1}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.msg{display:none;border-radius:10px;padding:14px;margin-bottom:14px;font-size:14.5px;line-height:1.8}
+.msg.ok{display:block;background:var(--green-light);color:var(--green);border:1px solid var(--green)}
+.msg.err{display:block;background:var(--red-light);color:var(--red);border:1px solid var(--red)}
+.codebox{display:none;background:var(--gold-light);border:2px solid var(--gold);border-radius:10px;padding:16px;margin-bottom:14px;text-align:center}
+.codebox .code{font-size:34px;font-weight:700;letter-spacing:6px;color:var(--navy);direction:ltr;margin:8px 0}
+.codebox textarea{width:100%;min-height:96px;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;margin:8px 0;resize:vertical}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--navy);color:#fff;padding:9px 6px;font-weight:600;white-space:nowrap}
+td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+td.name{text-align:right;font-weight:600}
+tr.off td{color:#98a6ad}
+.tag{border-radius:4px;padding:2px 7px;font-size:12px}
+.tag.ok{background:var(--green-light);color:var(--green)}
+.tag.no{background:var(--red-light);color:var(--red)}
+.tag.lock{background:var(--gold-light);color:#9a7b1f}
+.tbl{overflow-x:auto}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7}
+#app{display:none}
+@media(max-width:600px){.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="org">مؤسسة التدريبات العقلية</div>
+  <h1>إدارة المناديب والأكواد</h1>
+</div>
+
+<div class="wrap">
+  <div class="msg" id="msg"></div>
+
+  <div class="card" id="login">
+    <h3>دخول الإدارة</h3>
+    <div class="row">
+      <div><label for="adm">كود الإدارة (8 أرقام)</label><input id="adm" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div>
+      <button class="btn navy" id="loginBtn" onclick="login()">دخول</button>
+    </div>
+    <div class="hint">5 محاولات غلط = قفل 15 دقيقة.</div>
+  </div>
+
+  <div id="app">
+    <div class="codebox" id="codebox">
+      <div id="cbTitle"></div>
+      <div class="code" id="cbCode"></div>
+      <textarea id="cbText" readonly></textarea>
+      <button class="btn" onclick="copyMsg()">📋 نسخ الرسالة</button>
+      <div class="hint">الكود ده بيظهر مرة واحدة بس — انسخه دلوقتي. لو ضاع، اعمل "كود جديد".</div>
+    </div>
+
+    <div class="card">
+      <h3>+ إضافة مندوب</h3>
+      <div class="grid3">
+        <div><label for="nName">اسم المندوب</label><input id="nName" maxlength="40" placeholder="مثلاً: سعيدة"></div>
+        <div><label for="nMarket">السوق</label><input id="nMarket" maxlength="40" list="markets" placeholder="مثلاً: تونس"></div>
+        <div><label for="nLine">رقم الخط بكود الدولة</label><input id="nLine" inputmode="numeric" placeholder="216xxxxxxxx" style="direction:ltr;text-align:right"></div>
+      </div>
+      <datalist id="markets"></datalist>
+      <div style="margin-top:12px"><button class="btn" id="addBtn" onclick="addRep()">إضافة وتوليد كود</button></div>
+      <div class="hint">لو الرقم موجود قبل كده، الاسم والسوق هيتحدّثوا ويطلع له كود جديد (والقديم يبطل).</div>
+    </div>
+
+    <div class="card">
+      <h3>المناديب الحاليين</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>المندوب</th><th>السوق</th><th>الخط</th><th>الكود</th><th></th></tr></thead>
+        <tbody id="list"></tbody>
+      </table></div>
+      <div class="hint">"إيقاف" بيخفي المندوب من صفحة التقرير ويلغي كوده فورًا. "تفعيل" بيرجّعه بكود جديد.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB = 'https://vrrpkgcghtcfyfilwwzs.supabase.co/rest/v1/';
+const KEY = 'sb_publishable_R_Eeql_At_TFGhJ_DchDHA_Dc3SrPdw';
+const ENTRY_URL = 'https://engami.github.io/aqleeat-dashboard/entry.html';
+let ADMIN = null;
+
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function showMsg(kind, text){ const m = $('msg'); m.className = 'msg ' + kind; m.textContent = text; window.scrollTo({top:0, behavior:'smooth'}); }
+function clearMsg(){ $('msg').className = 'msg'; }
+
+async function rpc(fn, body){
+  const r = await fetch(SB + 'rpc/' + fn, {method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'}, body: JSON.stringify(body || {})});
+  const out = await r.json();
+  if (!r.ok) throw new Error(out.message || ('HTTP ' + r.status));
+  return out;
+}
+async function get(path){
+  const r = await fetch(SB + path, {headers:{apikey:KEY}});
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.json();
+}
+
+async function login(){
+  const code = $('adm').value.trim();
+  if (!/^\d{8}$/.test(code)) return showMsg('err', 'كود الإدارة 8 أرقام.');
+  $('loginBtn').disabled = true;
+  try {
+    const out = await rpc('admin_rep', {p_admin_code: code, p_action: 'ping'});
+    if (!out.ok) return showMsg('err', '✖ ' + out.error);
+    ADMIN = code; $('adm').value = '';
+    $('login').style.display = 'none'; $('app').style.display = 'block'; clearMsg();
+    await loadList();
+  } catch(e){ showMsg('err', '✖ ' + e.message); }
+  finally { $('loginBtn').disabled = false; }
+}
+
+async function loadList(){
+  try {
+    const [lines, status, cmap] = await Promise.all([
+      get('wa_lines?select=route_id,rep_name,market,active&order=active.desc,market.asc'),
+      rpc('rep_lines_status'),
+      get('country_map?select=name_ar')
+    ]);
+    const st = Object.fromEntries(status.map(s => [s.route_id, s]));
+    $('markets').innerHTML = [...new Set(cmap.map(c => c.name_ar).concat(lines.map(l => l.market).filter(Boolean)))].map(m => `<option value="${esc(m)}">`).join('');
+    $('list').innerHTML = lines.filter(l => l.route_id !== 'lead_form').map(l => {
+      const s = st[l.route_id] || {};
+      const tag = !l.active ? '<span class="tag no">متوقف</span>' : s.locked ? '<span class="tag lock">مقفول مؤقتًا</span>' : s.has_code ? '<span class="tag ok">✔ فعّال</span>' : '<span class="tag no">مالوش كود</span>';
+      const id = esc(l.route_id);
+      const actions = l.active
+        ? `<button class="btn small navy" onclick="act('reset','${id}')">كود جديد</button> <button class="btn small ghost" onclick="act('deactivate','${id}')">إيقاف</button>`
+        : `<button class="btn small ghost on" onclick="act('activate','${id}')">تفعيل</button>`;
+      return `<tr class="${l.active ? '' : 'off'}"><td class="name">${esc(l.rep_name)}</td><td>${esc(l.market || '—')}</td><td style="direction:ltr">${id}</td><td>${tag}</td><td>${actions}</td></tr>`;
+    }).join('');
+  } catch(e){ showMsg('err', 'تعذّر تحميل القايمة: ' + e.message); }
+}
+
+function showCode(out, title){
+  $('codebox').style.display = 'block';
+  $('cbTitle').innerHTML = `${title}: <b>${esc(out.rep_name)}</b> — ${esc(out.market || '')} <span style="direction:ltr">(${esc(out.route_id)})</span>`;
+  $('cbCode').textContent = out.code;
+  $('cbText').value = `أهلاً ${out.rep_name} 👋\nده الكود السري بتاعك لتقرير المندوب اليومي: ${out.code}\nالصفحة: ${ENTRY_URL}\nاختار اسمك من القايمة، اكتب الكود، وابعت التقرير كل يوم. الكود ده ليك إنت بس — ماتبعتوش لحد.`;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+async function copyMsg(){
+  try { await navigator.clipboard.writeText($('cbText').value); showMsg('ok', '✔ الرسالة اتنسخت — ابعتها للمندوب في رسالة خاصة.'); }
+  catch(e){ $('cbText').select(); showMsg('err', 'النسخ التلقائي ماشتغلش — الرسالة متحددة، اعمل نسخ يدوي.'); }
+}
+
+async function addRep(){
+  const name = $('nName').value.trim(), market = $('nMarket').value.trim(), line = $('nLine').value.replace(/[^0-9]/g, '');
+  if (!name) return showMsg('err', 'اكتب اسم المندوب.');
+  if (!/^\d{6,15}$/.test(line)) return showMsg('err', 'رقم الخط لازم يكون أرقام بكود الدولة (من غير + أو مسافات تتشال لوحدها).');
+  $('addBtn').disabled = true;
+  try {
+    const out = await rpc('admin_rep', {p_admin_code: ADMIN, p_action: 'add', p_route_id: line, p_rep_name: name, p_market: market || null});
+    if (!out.ok) return showMsg('err', '✖ ' + out.error);
+    clearMsg(); showCode(out, 'اتضاف');
+    $('nName').value = $('nMarket').value = $('nLine').value = '';
+    await loadList();
+  } catch(e){ showMsg('err', '✖ ' + e.message); }
+  finally { $('addBtn').disabled = false; }
+}
+
+async function act(action, id){
+  const ask = {reset:'توليد كود جديد؟ الكود القديم هيبطل فورًا.', deactivate:'إيقاف المندوب ده؟ هيختفي من صفحة التقرير وكوده هيبطل.', activate:'تفعيل المندوب ده بكود جديد؟'}[action];
+  if (!confirm(ask)) return;
+  try {
+    const out = await rpc('admin_rep', {p_admin_code: ADMIN, p_action: action, p_route_id: id});
+    if (!out.ok) return showMsg('err', '✖ ' + out.error);
+    if (out.code) { clearMsg(); showCode(out, action === 'activate' ? 'اتفعّل' : 'كود جديد'); }
+    else showMsg('ok', '✔ اتوقف.');
+    await loadList();
+  } catch(e){ showMsg('err', '✖ ' + e.message); }
+}
+
+$('adm').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+</script>
+</body>
+</html>
