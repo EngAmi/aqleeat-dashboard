@@ -178,10 +178,18 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
   <div class="tab" id="tab-lines">
     <div class="panel">
       <h3>الخطوط والمناديب — آخر 7 أيام</h3>
-      <div class="hint">وصل/اتردّ = من تقرير الفريق اليومي. التسجيلات = اللي اتسجلت ومعاها رقم الخط. الرد = اتردّ ÷ وصل · التحويل = تسجيلات ÷ وصل.</div>
+      <div class="hint">الأرقام من <a href="entry.html" style="color:var(--navy);font-weight:700">صفحة تقرير المندوب ←</a> · الرد = اتردّ ÷ وصل · التحويل = تسجيلات ÷ وصل.</div>
       <div class="tbl-scroll"><table>
         <thead><tr><th>المندوب</th><th>السوق</th><th>الخط</th><th>وصل</th><th>اتردّ</th><th>نسبة الرد</th><th>تسجيلات</th><th>التحويل</th><th>آخر تقرير</th></tr></thead>
         <tbody id="lBody"></tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <h3>مطابقة: رسالتك اليومية مقابل صفحة المناديب</h3>
+      <div class="hint">الرقم الرسمي = رسالتك اليومية. الفرق بيوضح لو فيه تسجيلات المناديب ماسجلوهاش أو العكس.</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>التاريخ</th><th>الرسمي (رسالتك)</th><th>صفحة المناديب</th><th>الفرق</th><th>خطوط بعتت</th></tr></thead>
+        <tbody id="rBody"></tbody>
       </table></div>
     </div>
   </div>
@@ -227,7 +235,7 @@ const ACCOUNTS = [
   ['754398562232744',  'IG الشخصي'],
 ];
 
-let state = {cfg:{}, daily:[], markets:[], md:[], sync:null, d150:[], acc:[], lines:[], lineDays:[]};
+let state = {cfg:{}, daily:[], markets:[], md:[], sync:null, d150:[], acc:[], lines:[], lineDays:[], recon:[]};
 let mSort = {k:'total_regs', dir:-1};
 let chart = null;
 let activeTab = 'overview';
@@ -261,7 +269,7 @@ async function loadAll(){
     const cfgRows = await q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,b151_daily_spend_target,b150_cpa_main,b150_gw_share,b150_conv_rate,b151_alert_spend,b151_alert_days,token_expiry,campaign_start,batch_close)');
     state.cfg = Object.fromEntries(cfgRows.map(r => [r.key, r.value]));
     const accFrom = minDate(state.cfg.b151_start, addDays(today, -14));
-    const [daily, markets, sync, md, d150, acc, lines, lineDays] = await Promise.all([
+    const [daily, markets, sync, md, d150, acc, lines, lineDays, recon] = await Promise.all([
       q('b151_daily_v1?select=*&order=date.asc'),
       q('b151_markets_v1?select=*'),
       q('sync_runs?select=started_at,until&status=eq.success&run_mode=eq.production&order=started_at.desc&limit=1'),
@@ -269,9 +277,10 @@ async function loadAll(){
       q('daily?select=date,regs&order=date.asc'),
       q('meta_account_daily?select=date,account_id,spend,conv&date=gte.' + accFrom + '&order=date.desc&limit=1000'),
       q('wa_lines?select=route_id,rep_name,market,active&order=market.asc'),
-      q('b151_lines_v1?select=*&date=gte.' + addDays(today, -7) + '&limit=1000')
+      q('b151_lines_v1?select=*&date=gte.' + addDays(today, -7) + '&limit=1000'),
+      q('b151_reconcile_v1?select=*&date=gte.' + addDays(today, -7) + '&order=date.desc')
     ]);
-    Object.assign(state, {daily, markets, md, d150, acc, lines, lineDays, sync: sync[0] || null});
+    Object.assign(state, {daily, markets, md, d150, acc, lines, lineDays, recon, sync: sync[0] || null});
     render(today);
   } catch (e) {
     banner.className = 'banner bad';
@@ -504,7 +513,8 @@ function renderLines(today){
   Object.keys(agg).filter(id => !known.has(id)).forEach(id => rows.push({id, ...agg[id], rep:'خط غير مسجّل', market:'—'}));
   const anyData = rows.some(r => r.recDays || r.regs);
   const body = document.getElementById('lBody');
-  if (!anyData){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش أرقام من الفريق — بتظهر أول ما رسالة التسجيلات اليومية تيجي بالشكل الجديد (وصل / اتردّ لكل خط + رقم الخط مع كل تسجيل).</td></tr>'; return; }
+  renderRecon();
+  if (!anyData){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش تقارير من المناديب — بتظهر أول ما حد يبعت من صفحة تقرير المندوب.</td></tr>'; return; }
   rows.sort((a, b) => (b.rec - a.rec) || (b.regs - a.regs));
   body.innerHTML = rows.map(r => {
     const resp = r.rec ? r.han / r.rec * 100 : null, conv = r.rec ? r.regs / r.rec * 100 : null;
@@ -513,6 +523,17 @@ function renderLines(today){
       <td>${r.recDays ? fmtInt(r.rec) : '—'}</td><td>${r.recDays ? fmtInt(r.han) : '—'}</td>
       <td>${resp == null ? '—' : `<span class="${cls}">${resp.toFixed(0)}%</span>`}</td>
       <td>${fmtInt(r.regs)}</td><td>${conv == null ? '—' : conv.toFixed(1) + '%'}</td><td>${r.last ? dShort(r.last) : '—'}</td></tr>`;
+  }).join('');
+}
+
+function renderRecon(){
+  const body = document.getElementById('rBody');
+  if (!state.recon.length){ body.innerHTML = '<tr><td colspan="5" class="empty">لا توجد أيام بعد.</td></tr>'; return; }
+  body.innerHTML = state.recon.map(r => {
+    const diff = N(r.diff), none = N(r.lines_reported) === 0;
+    const cls = none ? 'flat' : diff === 0 ? 'up' : 'down';
+    return `<tr><td>${dShort(r.date)}</td><td><b>${fmtInt(r.official)}</b></td><td>${none ? '—' : fmtInt(r.form_regs)}</td>
+      <td class="${cls}">${none ? '—' : (diff > 0 ? '+' : '') + fmtInt(diff)}</td><td>${fmtInt(r.lines_reported)} / ${fmtInt(r.lines_active)}</td></tr>`;
   }).join('');
 }
 
