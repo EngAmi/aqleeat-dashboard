@@ -23,6 +23,8 @@ body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color
 .banner{border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;display:none}
 .banner.bad{display:block;background:var(--red-light);color:var(--red);border:1px solid var(--red)}
 .banner.warn{display:block;background:var(--gold-light);color:#8a6d1f;border:1px solid var(--gold)}
+.notice{display:none;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;background:#e8f2f2;color:var(--navy);border:1px solid #b9d3d3}
+.notice.on{display:block}
 .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
 .toolbar .meta{font-size:12.5px;color:var(--muted)}
 .btn{background:var(--gold);color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:14px;font-family:inherit;cursor:pointer}
@@ -57,7 +59,8 @@ tr.dim td{color:#98a6ad}
 .up{color:var(--green);font-weight:700}.down{color:var(--red);font-weight:700}.flat{color:#98a6ad}
 .empty{color:var(--muted);padding:18px;text-align:center}
 .footer{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.9}
-@media(max-width:600px){.header h1{font-size:20px}.card .num{font-size:23px}table{font-size:12.5px}}
+td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight:700}
+@media(max-width:600px){.header h1{font-size:20px}.header .sub{font-size:12px}.chip{font-size:12.5px}.cards{grid-template-columns:repeat(2,1fr);gap:9px}.card{padding:12px}.card .num{font-size:21px}.chart-box{height:240px}table{font-size:12px}td,th{padding:7px 5px}}
 </style>
 </head>
 <body>
@@ -71,6 +74,7 @@ tr.dim td{color:#98a6ad}
 
 <div class="wrap">
   <div class="banner" id="banner"></div>
+  <div class="notice" id="notice"></div>
 
   <div class="toolbar">
     <div class="meta" id="metaLine">—</div>
@@ -83,18 +87,29 @@ tr.dim td{color:#98a6ad}
     <div class="card gold"><div class="num" id="cCpa">—</div><div class="lbl">تكلفة المتدرب (CPA)</div><div class="sub" id="cCpaSub"></div></div>
     <div class="card"><div class="num" id="cGw">—</div><div class="lbl">تسجيلات بوابة الدفع</div><div class="sub" id="cGwSub"></div></div>
     <div class="card"><div class="num" id="cPace">—</div><div class="lbl">المعدل الفعلي (آخر 7 أيام)</div><div class="sub" id="cPaceSub"></div></div>
+    <div class="card"><div class="num" id="c150">—</div><div class="lbl">دفعة 150 في نفس اليوم</div><div class="sub" id="c150Sub"></div></div>
   </div>
 
   <div class="panel">
     <h3>التقدّم نحو الهدف</h3>
     <div class="prog-lbl"><span id="pLbl">—</span><span id="pExp"></span></div>
     <div class="prog"><div class="prog-fill" id="pFill" style="width:0%"></div><div class="prog-mark" id="pMark" style="right:0%"></div></div>
-    <div class="prog-legend"><span></span>المفروض نكون وصلناله النهارده لو المسار خطي</div>
+    <div class="prog-legend"><span></span>المفروض نكون وصلناله النهارده — على منحنى دفعة 150 متكبّر لـ5,000</div>
   </div>
 
   <div class="panel">
-    <h3>المسار: التراكمي الفعلي مقابل خط الهدف</h3>
+    <h3>المسار: 151 مقابل الهدف ومقابل 150</h3>
+    <div class="hint">خط الهدف مرسوم بنفس شكل منحنى دفعة 150 (بطيء في الأول وسريع قرب القفل) ومتكبّر لـ5,000. خط 150 = التراكمي بتاعها في نفس رقم اليوم.</div>
     <div class="chart-box"><canvas id="chartPath"></canvas></div>
+  </div>
+
+  <div class="panel">
+    <h3>الصرف حسب الحساب</h3>
+    <div class="hint" id="accHint">آخر الأيام اللي صرفها اتسحب.</div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>التاريخ</th><th>Aqleeat Ads</th><th>Ahmed Ismail</th><th>TMEEC</th><th>IG الشخصي</th><th>الإجمالي</th><th>عن الهدف</th></tr></thead>
+      <tbody id="aBody"></tbody>
+    </table></div>
   </div>
 
   <div class="panel">
@@ -135,7 +150,7 @@ tr.dim td{color:#98a6ad}
 const SB = 'https://vrrpkgcghtcfyfilwwzs.supabase.co/rest/v1/';
 const KEY = 'sb_publishable_R_Eeql_At_TFGhJ_DchDHA_Dc3SrPdw';
 
-let state = {cfg:{}, daily:[], markets:[], md:[], sync:null};
+let state = {cfg:{}, daily:[], markets:[], md:[], sync:null, d150:[], acc:[]};
 let mSort = {k:'total_regs', dir:-1};
 let chart = null;
 
@@ -162,20 +177,40 @@ async function loadAll(){
   banner.className = 'banner'; banner.textContent = '';
   try {
     const today = cairoToday();
-    const [cfgRows, daily, markets, sync, md] = await Promise.all([
-      q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,token_expiry)'),
+    const [cfgRows, daily, markets, sync, md, d150, acc] = await Promise.all([
+      q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,b151_daily_spend_target,token_expiry,campaign_start,batch_close)'),
       q('b151_daily_v1?select=*&order=date.asc'),
       q('b151_markets_v1?select=*'),
       q('sync_runs?select=started_at,until&status=eq.success&run_mode=eq.production&order=started_at.desc&limit=1'),
-      q('b151_market_daily_v1?select=date,market,total_regs&date=gte.' + addDays(today, -14))
+      q('b151_market_daily_v1?select=date,market,total_regs&date=gte.' + addDays(today, -14)),
+      q('daily?select=date,regs&order=date.asc'),
+      q('meta_account_daily?select=date,account_id,spend&date=gte.' + addDays(today, -9) + '&order=date.desc')
     ]);
     state.cfg = Object.fromEntries(cfgRows.map(r => [r.key, r.value]));
     state.daily = daily; state.markets = markets; state.md = md; state.sync = sync[0] || null;
+    state.d150 = d150; state.acc = acc;
     render(today);
   } catch (e) {
     banner.className = 'banner bad';
     banner.textContent = '✖ تعذّر تحميل البيانات: ' + e.message;
   }
+}
+
+/* ---------- batch-150 curve ---------- */
+// cumulative regs of batch 150 by day number (main period only)
+function curve150(){
+  const s150 = state.cfg.campaign_start || '2026-07-19', c150 = state.cfg.batch_close || '2026-09-29';
+  const days = diffDays(s150, c150) + 1;
+  const byDate = Object.fromEntries(state.d150.map(r => [r.date, N(r.regs)]));
+  const cum = []; let t = 0;
+  for (let i = 0; i < days; i++){ t += byDate[addDays(s150, i)] || 0; cum.push(t); }
+  return cum; // cum[i] = cumulative after day i+1
+}
+// realistic target for day j (1-based) of a batch with totalDays days
+function shapedTarget(cum, j, totalDays, target){
+  if (!cum.length || !cum[cum.length - 1]) return Math.round(target * j / totalDays);
+  const k = Math.min(Math.max(Math.round(j / totalDays * cum.length), 1), cum.length);
+  return Math.round(target * cum[k - 1] / cum[cum.length - 1]);
 }
 
 /* ---------- render ---------- */
@@ -225,18 +260,35 @@ function render(today){
     ps.className = 'sub ' + (pace != null && pace >= required ? 'good' : 'bad');
   }
 
-  // progress
+  // batch 150 at the same day number
+  const cum = curve150();
+  const same150 = elapsed ? cum[Math.min(elapsed, cum.length) - 1] : 0;
+  setText('c150', fmtInt(same150));
+  const s150 = document.getElementById('c150Sub');
+  if (elapsed && same150){
+    const diff = totalRegs - same150;
+    s150.textContent = `إحنا: ${fmtInt(totalRegs)} (${diff >= 0 ? '+' : ''}${fmtInt(diff)} · ${(diff / same150 * 100).toFixed(0)}%)`;
+    s150.className = 'sub ' + (diff >= 0 ? 'good' : 'bad');
+  } else { s150.textContent = `اليوم ${elapsed} من الدفعة`; s150.className = 'sub'; }
+
+  // empty-state notice
+  const nt = document.getElementById('notice');
+  if (totalRegs === 0){ nt.className = 'notice on'; nt.textContent = 'بداية الدفعة — الأرقام بتظهر مع أول رسالة تسجيلات، والصرف بيتسحب أول مزامنة الصبح.'; }
+  else { nt.className = 'notice'; }
+
+  // progress (target shaped like batch 150)
   const pct = Math.min(totalRegs / target * 100, 100);
-  const expected = target * elapsed / totalDays;
+  const expected = elapsed ? shapedTarget(cum, elapsed, totalDays, target) : 0;
   document.getElementById('pFill').style.width = pct + '%';
   document.getElementById('pMark').style.right = Math.min(expected / target * 100, 100) + '%';
   setText('pLbl', `${fmtInt(totalRegs)} / ${fmtInt(target)} (${pct.toFixed(1)}%)`);
   const gap = totalRegs - expected;
   const pe = document.getElementById('pExp');
-  pe.textContent = `المسار الخطي النهارده: ${fmtInt(Math.round(expected))} · ${gap >= 0 ? 'متقدمين' : 'متأخرين'} ${fmtInt(Math.abs(Math.round(gap)))}`;
+  pe.textContent = `المفروض النهارده: ${fmtInt(Math.round(expected))} · ${gap >= 0 ? 'متقدمين' : 'متأخرين'} ${fmtInt(Math.abs(Math.round(gap)))}`;
   pe.className = gap >= 0 ? 'good' : 'bad';
 
-  drawChart(start, close, target, today);
+  drawChart(start, close, target, today, cum);
+  renderAccounts();
   renderMarkets(today);
   renderDaily(today, required);
   renderHealth(today);
@@ -244,26 +296,28 @@ function render(today){
 
 function setText(id, t){ document.getElementById(id).textContent = t; }
 
-function drawChart(start, close, target, today){
+function drawChart(start, close, target, today, cum){
   const total = diffDays(start, close) + 1;
-  const labels = [], targetLine = [], actual = [], bars = [];
+  const labels = [], targetLine = [], actual = [], bars = [], line150 = [];
   const byDate = Object.fromEntries(state.daily.map(r => [r.date, r]));
-  let cum = 0;
+  let run = 0;
   for (let i = 0; i < total; i++){
     const dt = addDays(start, i);
     labels.push(dShort(dt));
-    targetLine.push(Math.round(target * (i + 1) / total));
+    targetLine.push(shapedTarget(cum, i + 1, total, target));
+    line150.push(i < cum.length ? cum[i] : null);
     if (dt <= today){
       const r = byDate[dt]; const v = r ? N(r.regs) : 0;
-      cum += v; actual.push(cum); bars.push(v);
+      run += v; actual.push(run); bars.push(v);
     } else { actual.push(null); bars.push(null); }
   }
   if (chart) chart.destroy();
   const F = {family:'"Segoe UI", Tahoma, Arial, sans-serif'};
   chart = new Chart(document.getElementById('chartPath'), {
     data:{labels, datasets:[
-      {type:'line', label:'التراكمي الفعلي', data:actual, borderColor:'#c9a24a', backgroundColor:'#c9a24a', borderWidth:3, pointRadius:0, tension:.25, yAxisID:'y', spanGaps:false},
-      {type:'line', label:'خط الهدف', data:targetLine, borderColor:'#1e8449', borderDash:[6,4], borderWidth:2, pointRadius:0, yAxisID:'y'},
+      {type:'line', label:'دفعة 151', data:actual, borderColor:'#c9a24a', backgroundColor:'#c9a24a', borderWidth:3, pointRadius:0, tension:.25, yAxisID:'y', spanGaps:false},
+      {type:'line', label:'الهدف (بشكل منحنى 150)', data:targetLine, borderColor:'#1e8449', borderDash:[6,4], borderWidth:2, pointRadius:0, yAxisID:'y'},
+      {type:'line', label:'دفعة 150 (نفس اليوم)', data:line150, borderColor:'#9aa9b0', borderWidth:2, pointRadius:0, tension:.25, yAxisID:'y'},
       {type:'bar', label:'تسجيلات اليوم', data:bars, backgroundColor:'rgba(13,79,79,.35)', yAxisID:'y1'}
     ]},
     options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
@@ -272,6 +326,24 @@ function drawChart(start, close, target, today){
         y:{position:'right', beginAtZero:true, title:{display:true, text:'تراكمي', font:F}},
         y1:{position:'left', beginAtZero:true, grid:{drawOnChartArea:false}, title:{display:true, text:'يومي', font:F}}}}
   });
+}
+
+const ACC = ['1716202129023827', '277148180530185', '482408395164079', '754398562232744'];
+function renderAccounts(){
+  const tgt = N(state.cfg.b151_daily_spend_target) || 500;
+  const by = {};
+  state.acc.forEach(r => { (by[r.date] = by[r.date] || {})[r.account_id] = (by[r.date][r.account_id] || 0) + N(r.spend); });
+  const dates = Object.keys(by).sort().reverse().slice(0, 7);
+  document.getElementById('accHint').textContent = `آخر ${dates.length} أيام صرفها اتسحب · هدف التخفيض: $${tgt}/يوم لكل الحسابات.`;
+  const body = document.getElementById('aBody');
+  if (!dates.length){ body.innerHTML = '<tr><td colspan="7" class="empty">مفيش صرف متسحب.</td></tr>'; return; }
+  body.innerHTML = dates.map(dt => {
+    const v = ACC.map(a => by[dt][a] || 0);
+    const t = v.reduce((s, x) => s + x, 0);
+    const over = t - tgt;
+    return `<tr><td>${dShort(dt)}</td>${v.map(x => `<td>${fmtMoney(x)}</td>`).join('')}<td><b>${fmtMoney(t)}</b></td>
+      <td class="${over > 0 ? 'over' : 'under'}">${over > 0 ? '+' + fmtMoney(over) : '✔ ' + fmtMoney(-over)}</td></tr>`;
+  }).join('');
 }
 
 function sortMarkets(k){
@@ -347,7 +419,7 @@ function renderHealth(today){
   }
   if (msgs.length){ banner.className = 'banner ' + level; banner.textContent = msgs.join(' · '); }
   document.getElementById('metaLine').textContent = s
-    ? `آخر مزامنة صرف ناجحة: بيانات ${dShort(s.until)} · ${new Date(s.started_at).toLocaleString('ar-EG', {timeZone:'Africa/Cairo', dateStyle:'medium', timeStyle:'short'})}`
+    ? `آخر مزامنة صرف ناجحة: بيانات ${dShort(s.until)} · ${new Date(s.started_at).toLocaleString('en-GB', {timeZone:'Africa/Cairo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} (القاهرة)`
     : '—';
 }
 
