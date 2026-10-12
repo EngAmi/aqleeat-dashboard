@@ -25,10 +25,13 @@ body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color
 .banner.warn{display:block;background:var(--gold-light);color:#8a6d1f;border:1px solid var(--gold)}
 .notice{display:none;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;background:#e8f2f2;color:var(--navy);border:1px solid #b9d3d3}
 .notice.on{display:block}
-.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap}
-.toolbar .meta{font-size:12.5px;color:var(--muted)}
-.btn{background:var(--gold);color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:14px;font-family:inherit;cursor:pointer}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.tabs{display:flex;gap:8px;margin:4px 0 16px;flex-wrap:wrap;align-items:center}
+.tab-btn{background:#fff;border:1px solid var(--line);border-radius:8px 8px 0 0;padding:10px 20px;font-size:15px;font-family:inherit;cursor:pointer;color:var(--ink)}
+.tab-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tab{display:none}.tab.active{display:block}
+.btn{background:var(--gold);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:14px;font-family:inherit;cursor:pointer;margin-inline-start:auto}
+.meta{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
 .card{background:#fff;border-top:4px solid var(--navy);border-radius:8px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
 .card.gold{border-top-color:var(--gold)}
 .card .num{font-size:28px;font-weight:700;color:var(--navy);direction:ltr;text-align:right}
@@ -40,7 +43,7 @@ body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color
 .panel h3{color:var(--navy);font-size:16.5px;margin-bottom:12px;border-bottom:2px solid var(--gold);padding-bottom:7px;display:inline-block}
 .panel .hint{font-size:12.5px;color:var(--muted);margin:-4px 0 10px}
 .prog-lbl{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px;flex-wrap:wrap;gap:6px}
-.prog{position:relative;background:var(--alt);border-radius:20px;height:22px;border:1px solid var(--line);overflow:visible}
+.prog{position:relative;background:var(--alt);border-radius:20px;height:22px;border:1px solid var(--line)}
 .prog-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--navy),var(--gold));transition:width .8s ease}
 .prog-mark{position:absolute;top:-5px;width:3px;height:30px;background:var(--red);border-radius:2px}
 .prog-legend{font-size:12px;color:var(--muted);margin-top:8px}
@@ -57,10 +60,15 @@ tbody tr:nth-child(even){background:var(--alt)}
 tr.dim td{color:#98a6ad}
 .tot td{font-weight:700;background:var(--gold-light)!important}
 .up{color:var(--green);font-weight:700}.down{color:var(--red);font-weight:700}.flat{color:#98a6ad}
+.st-good{color:var(--green);background:var(--green-light);border-radius:4px;padding:3px 8px;font-size:13px;white-space:nowrap}
+.st-bad{color:var(--red);background:var(--red-light);border-radius:4px;padding:3px 8px;font-size:13px;white-space:nowrap}
+.st-warn{color:#9a7b1f;background:var(--gold-light);border-radius:4px;padding:3px 8px;font-size:13px;white-space:nowrap}
+.st-wait{color:#7a8a92;background:var(--alt);border-radius:4px;padding:3px 8px;font-size:13px;white-space:nowrap}
+td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight:700}
 .empty{color:var(--muted);padding:18px;text-align:center}
 .footer{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;line-height:1.9}
-td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight:700}
-@media(max-width:600px){.header h1{font-size:20px}.header .sub{font-size:12px}.chip{font-size:12.5px}.cards{grid-template-columns:repeat(2,1fr);gap:9px}.card{padding:12px}.card .num{font-size:21px}.chart-box{height:240px}table{font-size:12px}td,th{padding:7px 5px}}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.header h1{font-size:20px}.header .sub{font-size:12px}.chip{font-size:12.5px}.cards{gap:9px}.card{padding:12px}.card .num{font-size:21px}.chart-box{height:240px}table{font-size:12px}td,th{padding:7px 5px}.tab-btn{padding:8px 12px;font-size:13.5px}}
 </style>
 </head>
 <body>
@@ -76,83 +84,133 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
   <div class="banner" id="banner"></div>
   <div class="notice" id="notice"></div>
 
-  <div class="toolbar">
-    <div class="meta" id="metaLine">—</div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="overview">نظرة عامة</button>
+    <button class="tab-btn" data-tab="markets">الأسواق</button>
+    <button class="tab-btn" data-tab="spend">الصرف والحسابات</button>
+    <button class="tab-btn" data-tab="daily">السجل اليومي</button>
+    <button class="tab-btn" data-tab="weekly">المسار الأسبوعي</button>
     <button class="btn" onclick="loadAll()">⟳ تحديث</button>
   </div>
+  <div class="meta" id="metaLine">—</div>
 
-  <div class="cards">
-    <div class="card gold"><div class="num" id="cRegs">—</div><div class="lbl">إجمالي التسجيلات</div><div class="sub" id="cRegsSub"></div></div>
-    <div class="card"><div class="num" id="cSpend">—</div><div class="lbl">إجمالي الصرف</div><div class="sub" id="cSpendSub"></div></div>
-    <div class="card gold"><div class="num" id="cCpa">—</div><div class="lbl">تكلفة المتدرب (CPA)</div><div class="sub" id="cCpaSub"></div></div>
-    <div class="card"><div class="num" id="cGw">—</div><div class="lbl">تسجيلات بوابة الدفع</div><div class="sub" id="cGwSub"></div></div>
-    <div class="card"><div class="num" id="cPace">—</div><div class="lbl">المعدل الفعلي (آخر 7 أيام)</div><div class="sub" id="cPaceSub"></div></div>
-    <div class="card"><div class="num" id="c150">—</div><div class="lbl">دفعة 150 في نفس اليوم</div><div class="sub" id="c150Sub"></div></div>
+  <!-- ======== نظرة عامة ======== -->
+  <div class="tab active" id="tab-overview">
+    <div class="cards">
+      <div class="card gold"><div class="num" id="cRegs">—</div><div class="lbl">إجمالي التسجيلات</div><div class="sub" id="cRegsSub"></div></div>
+      <div class="card"><div class="num" id="cSpend">—</div><div class="lbl">إجمالي الصرف</div><div class="sub" id="cSpendSub"></div></div>
+      <div class="card gold"><div class="num" id="cCpa">—</div><div class="lbl">تكلفة المتدرب (CPA)</div><div class="sub" id="cCpaSub"></div></div>
+      <div class="card"><div class="num" id="cPace">—</div><div class="lbl">المعدل اليومي (آخر 7 أيام)</div><div class="sub" id="cPaceSub"></div></div>
+    </div>
+
+    <div class="panel">
+      <h3>التقدّم نحو الهدف</h3>
+      <div class="prog-lbl"><span id="pLbl">—</span><span id="pExp"></span></div>
+      <div class="prog"><div class="prog-fill" id="pFill" style="width:0%"></div><div class="prog-mark" id="pMark" style="right:0%"></div></div>
+      <div class="prog-legend"><span></span>المفروض نكون وصلناله النهارده — على منحنى دفعة 150 متكبّر لـ5,000</div>
+    </div>
+
+    <div class="panel">
+      <h3>مؤشرات الصحة</h3>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>المؤشر</th><th>الفعلي</th><th>المقارنة</th><th>الحالة</th></tr></thead>
+        <tbody id="hBody"></tbody>
+      </table></div>
+    </div>
+
+    <div class="panel">
+      <h3>المسار: 151 مقابل الهدف ومقابل 150</h3>
+      <div class="hint">خط الهدف بنفس شكل منحنى دفعة 150 (بطيء في الأول وسريع قرب القفل) متكبّر لـ5,000. خط 150 = التراكمي بتاعها في نفس رقم اليوم.</div>
+      <div class="chart-box"><canvas id="chartPath"></canvas></div>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3>التقدّم نحو الهدف</h3>
-    <div class="prog-lbl"><span id="pLbl">—</span><span id="pExp"></span></div>
-    <div class="prog"><div class="prog-fill" id="pFill" style="width:0%"></div><div class="prog-mark" id="pMark" style="right:0%"></div></div>
-    <div class="prog-legend"><span></span>المفروض نكون وصلناله النهارده — على منحنى دفعة 150 متكبّر لـ5,000</div>
+  <!-- ======== الأسواق ======== -->
+  <div class="tab" id="tab-markets">
+    <div class="panel">
+      <h3>الأسواق</h3>
+      <div class="hint">البوابة والباي بال أعمدة منفصلة عن المباشر. الصرف من بداية الدفعة حسب بلد عرض الإعلان. الاتجاه = آخر 7 أيام مقابل الـ7 اللي قبلها. اضغط على العنوان للترتيب.</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr id="mHead">
+          <th class="sortable" data-k="market">السوق</th>
+          <th class="sortable" data-k="direct_regs">مباشر</th>
+          <th class="sortable" data-k="gateway_regs">بوابة</th>
+          <th class="sortable" data-k="paypal_regs">باي بال</th>
+          <th class="sortable" data-k="total_regs">الإجمالي</th>
+          <th class="sortable" data-k="spend">الصرف</th>
+          <th class="sortable" data-k="cpa">CPA</th>
+          <th class="sortable" data-k="last7">آخر 7 أيام</th>
+          <th>الاتجاه</th>
+        </tr></thead>
+        <tbody id="mBody"></tbody>
+      </table></div>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3>المسار: 151 مقابل الهدف ومقابل 150</h3>
-    <div class="hint">خط الهدف مرسوم بنفس شكل منحنى دفعة 150 (بطيء في الأول وسريع قرب القفل) ومتكبّر لـ5,000. خط 150 = التراكمي بتاعها في نفس رقم اليوم.</div>
-    <div class="chart-box"><canvas id="chartPath"></canvas></div>
+  <!-- ======== الصرف والحسابات ======== -->
+  <div class="tab" id="tab-spend">
+    <div class="panel">
+      <h3>إجمالي كل حساب منذ بداية الدفعة</h3>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>الحساب</th><th>الصرف</th><th>المحادثات</th><th>تكلفة المحادثة</th><th>% من الصرف</th></tr></thead>
+        <tbody id="aTotBody"></tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <h3>الصرف اليومي حسب الحساب</h3>
+      <div class="hint" id="accHint">—</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr id="aHead"></tr></thead>
+        <tbody id="aBody"></tbody>
+      </table></div>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3>الصرف حسب الحساب</h3>
-    <div class="hint" id="accHint">آخر الأيام اللي صرفها اتسحب.</div>
-    <div class="tbl-scroll"><table>
-      <thead><tr><th>التاريخ</th><th>Aqleeat Ads</th><th>Ahmed Ismail</th><th>TMEEC</th><th>IG الشخصي</th><th>الإجمالي</th><th>عن الهدف</th></tr></thead>
-      <tbody id="aBody"></tbody>
-    </table></div>
+  <!-- ======== السجل اليومي ======== -->
+  <div class="tab" id="tab-daily">
+    <div class="panel">
+      <h3>السجل اليومي</h3>
+      <div class="hint">صرف اليوم بيتسحب الصبح اللي بعده — فآخر يوم بيظهر صرفه "يتسحب بكرة" لحد المزامنة.</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr>
+          <th>التاريخ</th><th>تسجيلات</th><th>منها بوابة</th><th>الصرف</th><th>المحادثات</th><th>CPA اليوم</th>
+          <th>التراكمي</th><th>CPA التراكمي</th><th>المطلوب/يوم</th>
+        </tr></thead>
+        <tbody id="dBody"></tbody>
+      </table></div>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3>الأسواق</h3>
-    <div class="hint">البوابة والباي بال أعمدة منفصلة عن المباشر. الصرف من 12/10 حسب بلد عرض الإعلان. الاتجاه = آخر 7 أيام مقابل الـ7 اللي قبلها. اضغط على العنوان للترتيب.</div>
-    <div class="tbl-scroll"><table>
-      <thead><tr id="mHead">
-        <th class="sortable" data-k="market">السوق</th>
-        <th class="sortable" data-k="direct_regs">مباشر</th>
-        <th class="sortable" data-k="gateway_regs">بوابة</th>
-        <th class="sortable" data-k="paypal_regs">باي بال</th>
-        <th class="sortable" data-k="total_regs">الإجمالي</th>
-        <th class="sortable" data-k="spend">الصرف</th>
-        <th class="sortable" data-k="cpa">CPA</th>
-        <th class="sortable" data-k="last7">آخر 7 أيام</th>
-        <th>الاتجاه</th>
-      </tr></thead>
-      <tbody id="mBody"></tbody>
-    </table></div>
+  <!-- ======== المسار الأسبوعي ======== -->
+  <div class="tab" id="tab-weekly">
+    <div class="panel">
+      <h3>المسار الأسبوعي</h3>
+      <div class="hint">الهدف التراكمي في آخر كل أسبوع على منحنى دفعة 150 متكبّر لـ5,000.</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>الأسبوع</th><th>الفترة</th><th>تسجيلات الأسبوع</th><th>صرف الأسبوع</th><th>الهدف التراكمي</th><th>الفعلي التراكمي</th><th>الحالة</th></tr></thead>
+        <tbody id="wBody"></tbody>
+      </table></div>
+    </div>
   </div>
 
-  <div class="panel">
-    <h3>السجل اليومي</h3>
-    <div class="hint">صرف اليوم بيتسحب الصبح اللي بعده — فآخر يوم بيظهر صرفه صفر لحد المزامنة.</div>
-    <div class="tbl-scroll"><table>
-      <thead><tr>
-        <th>التاريخ</th><th>تسجيلات</th><th>منها بوابة</th><th>الصرف</th><th>CPA اليوم</th>
-        <th>التراكمي</th><th>CPA التراكمي</th><th>المطلوب/يوم</th>
-      </tr></thead>
-      <tbody id="dBody"></tbody>
-    </table></div>
-  </div>
-
-  <div class="footer" id="footer">مصدر البيانات: Supabase (قراءة فقط) · الصرف: مزامنة Meta اليومية · التسجيلات: الإدخال اليومي</div>
+  <div class="footer">مصدر البيانات: Supabase (قراءة فقط) · الصرف: مزامنة Meta اليومية لـ5 حسابات · التسجيلات: الإدخال اليومي</div>
 </div>
 
 <script>
 const SB = 'https://vrrpkgcghtcfyfilwwzs.supabase.co/rest/v1/';
 const KEY = 'sb_publishable_R_Eeql_At_TFGhJ_DchDHA_Dc3SrPdw';
+const ACCOUNTS = [
+  ['1716202129023827', 'Aqleeat Ads'],
+  ['277148180530185',  'Ahmed Ismail'],
+  ['482408395164079',  'TMEEC'],
+  ['836136391841530',  'mohamed ayad (العراق)'],
+  ['754398562232744',  'IG الشخصي'],
+];
 
 let state = {cfg:{}, daily:[], markets:[], md:[], sync:null, d150:[], acc:[]};
 let mSort = {k:'total_regs', dir:-1};
 let chart = null;
+let activeTab = 'overview';
 
 /* ---------- helpers ---------- */
 async function q(path){
@@ -164,12 +222,15 @@ const N = v => Number(v) || 0;
 const fmtInt = v => N(v).toLocaleString('en-US');
 const fmtMoney = v => '$' + N(v).toLocaleString('en-US', {maximumFractionDigits:0});
 const fmtMoney1 = v => v == null ? '—' : '$' + N(v).toFixed(1);
+const fmtMoney2 = v => v == null ? '—' : '$' + N(v).toFixed(2);
 function cairoToday(){
   return new Intl.DateTimeFormat('en-CA', {timeZone:'Africa/Cairo', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
 }
 function addDays(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); }
 function diffDays(a, b){ return Math.round((new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000); }
 function dShort(s){ const [y,m,d] = s.split('-'); return +d + '/' + +m; }
+function setText(id, t){ document.getElementById(id).textContent = t; }
+const minDate = (a, b) => a < b ? a : b;
 
 /* ---------- load ---------- */
 async function loadAll(){
@@ -177,18 +238,18 @@ async function loadAll(){
   banner.className = 'banner'; banner.textContent = '';
   try {
     const today = cairoToday();
-    const [cfgRows, daily, markets, sync, md, d150, acc] = await Promise.all([
-      q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,b151_daily_spend_target,token_expiry,campaign_start,batch_close)'),
+    const cfgRows = await q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,b151_daily_spend_target,b150_cpa_main,b150_gw_share,token_expiry,campaign_start,batch_close)');
+    state.cfg = Object.fromEntries(cfgRows.map(r => [r.key, r.value]));
+    const accFrom = minDate(state.cfg.b151_start, addDays(today, -14));
+    const [daily, markets, sync, md, d150, acc] = await Promise.all([
       q('b151_daily_v1?select=*&order=date.asc'),
       q('b151_markets_v1?select=*'),
       q('sync_runs?select=started_at,until&status=eq.success&run_mode=eq.production&order=started_at.desc&limit=1'),
       q('b151_market_daily_v1?select=date,market,total_regs&date=gte.' + addDays(today, -14)),
       q('daily?select=date,regs&order=date.asc'),
-      q('meta_account_daily?select=date,account_id,spend&date=gte.' + addDays(today, -9) + '&order=date.desc')
+      q('meta_account_daily?select=date,account_id,spend,conv&date=gte.' + accFrom + '&order=date.desc&limit=1000')
     ]);
-    state.cfg = Object.fromEntries(cfgRows.map(r => [r.key, r.value]));
-    state.daily = daily; state.markets = markets; state.md = md; state.sync = sync[0] || null;
-    state.d150 = d150; state.acc = acc;
+    Object.assign(state, {daily, markets, md, d150, acc, sync: sync[0] || null});
     render(today);
   } catch (e) {
     banner.className = 'banner bad';
@@ -197,39 +258,27 @@ async function loadAll(){
 }
 
 /* ---------- batch-150 curve ---------- */
-// cumulative regs of batch 150 by day number (main period only)
 function curve150(){
   const s150 = state.cfg.campaign_start || '2026-07-19', c150 = state.cfg.batch_close || '2026-09-29';
   const days = diffDays(s150, c150) + 1;
   const byDate = Object.fromEntries(state.d150.map(r => [r.date, N(r.regs)]));
   const cum = []; let t = 0;
   for (let i = 0; i < days; i++){ t += byDate[addDays(s150, i)] || 0; cum.push(t); }
-  return cum; // cum[i] = cumulative after day i+1
+  return cum;
 }
-// realistic target for day j (1-based) of a batch with totalDays days
 function shapedTarget(cum, j, totalDays, target){
   if (!cum.length || !cum[cum.length - 1]) return Math.round(target * j / totalDays);
   const k = Math.min(Math.max(Math.round(j / totalDays * cum.length), 1), cum.length);
   return Math.round(target * cum[k - 1] / cum[cum.length - 1]);
 }
 
-/* ---------- render ---------- */
-function render(today){
+/* ---------- derived numbers ---------- */
+function compute(today){
   const c = state.cfg;
   const start = c.b151_start, close = c.b151_close, evalEnd = c.b151_eval_end, target = N(c.b151_target) || 5000;
   const totalDays = diffDays(start, close) + 1;
   const elapsed = Math.max(0, Math.min(diffDays(start, today) + 1, totalDays));
   const remDays = diffDays(today, close) + 1;
-  const inEval = diffDays(close, today) > 0;
-
-  // header
-  document.getElementById('hdrSub').textContent =
-    `التسجيل: ${dShort(start)} – ${dShort(close)} (${totalDays} يوم) · فترة التقييم لحد ${dShort(evalEnd)} · الهدف: ${fmtInt(target)} متدرب · USD`;
-  document.getElementById('chip').innerHTML = inEval
-    ? `فترة التقييم · فاضل <b>${Math.max(diffDays(today, evalEnd) + 1, 0)}</b> يوم`
-    : `اليوم <b>${elapsed}</b> من ${totalDays} · فاضل <b>${Math.max(remDays, 0)}</b> يوم على القفل`;
-
-  // totals
   const d = state.daily;
   const totalRegs = d.reduce((s, r) => s + N(r.regs), 0);
   const totalGw = d.reduce((s, r) => s + N(r.gateway_regs), 0);
@@ -237,85 +286,93 @@ function render(today){
   const spent = d.filter(r => N(r.spend) > 0);
   const lastSpend = spent.length ? spent[spent.length - 1] : null;
   const cpa = lastSpend && N(lastSpend.cum_regs) > 0 ? N(lastSpend.cum_spend) / N(lastSpend.cum_regs) : null;
-
-  // pace: last 7 complete days (yesterday back), inside the batch
-  const winFrom = addDays(today, -7), winTo = addDays(today, -1);
-  const win = d.filter(r => r.date >= winFrom && r.date <= winTo);
+  const win = d.filter(r => r.date >= addDays(today, -7) && r.date <= addDays(today, -1));
   const pace = win.length ? win.reduce((s, r) => s + N(r.regs), 0) / win.length : null;
   const required = remDays > 0 ? Math.max(target - totalRegs, 0) / remDays : null;
-
-  setText('cRegs', fmtInt(totalRegs));
-  setText('cRegsSub', `${(totalRegs / target * 100).toFixed(1)}% من ${fmtInt(target)}`);
-  setText('cSpend', fmtMoney(totalSpend));
-  setText('cSpendSub', lastSpend ? `حتى ${dShort(lastSpend.date)}` : 'مفيش صرف متسحب لسه');
-  setText('cCpa', cpa == null ? '—' : '$' + cpa.toFixed(1));
-  setText('cCpaSub', lastSpend ? `على الأيام اللي صرفها اتسحب (لحد ${dShort(lastSpend.date)})` : 'بيظهر بعد أول تسجيلات + صرف');
-  setText('cGw', fmtInt(totalGw));
-  setText('cGwSub', totalRegs ? `${(totalGw / totalRegs * 100).toFixed(1)}% من الإجمالي` : '—');
-  setText('cPace', pace == null ? '—' : pace.toFixed(1) + '/يوم');
-  const ps = document.getElementById('cPaceSub');
-  if (required == null) { ps.textContent = 'التسجيل اتقفل'; ps.className = 'sub'; }
-  else {
-    ps.textContent = `المطلوب: ${required.toFixed(1)}/يوم عشان نوصل ${fmtInt(target)}`;
-    ps.className = 'sub ' + (pace != null && pace >= required ? 'good' : 'bad');
-  }
-
-  // batch 150 at the same day number
   const cum = curve150();
   const same150 = elapsed ? cum[Math.min(elapsed, cum.length) - 1] : 0;
-  setText('c150', fmtInt(same150));
-  const s150 = document.getElementById('c150Sub');
-  if (elapsed && same150){
-    const diff = totalRegs - same150;
-    s150.textContent = `إحنا: ${fmtInt(totalRegs)} (${diff >= 0 ? '+' : ''}${fmtInt(diff)} · ${(diff / same150 * 100).toFixed(0)}%)`;
-    s150.className = 'sub ' + (diff >= 0 ? 'good' : 'bad');
-  } else { s150.textContent = `اليوم ${elapsed} من الدفعة`; s150.className = 'sub'; }
-
-  // empty-state notice
-  const nt = document.getElementById('notice');
-  if (totalRegs === 0){ nt.className = 'notice on'; nt.textContent = 'بداية الدفعة — الأرقام بتظهر مع أول رسالة تسجيلات، والصرف بيتسحب أول مزامنة الصبح.'; }
-  else { nt.className = 'notice'; }
-
-  // progress (target shaped like batch 150)
-  const pct = Math.min(totalRegs / target * 100, 100);
   const expected = elapsed ? shapedTarget(cum, elapsed, totalDays, target) : 0;
-  document.getElementById('pFill').style.width = pct + '%';
-  document.getElementById('pMark').style.right = Math.min(expected / target * 100, 100) + '%';
-  setText('pLbl', `${fmtInt(totalRegs)} / ${fmtInt(target)} (${pct.toFixed(1)}%)`);
-  const gap = totalRegs - expected;
-  const pe = document.getElementById('pExp');
-  pe.textContent = `المفروض النهارده: ${fmtInt(Math.round(expected))} · ${gap >= 0 ? 'متقدمين' : 'متأخرين'} ${fmtInt(Math.abs(Math.round(gap)))}`;
-  pe.className = gap >= 0 ? 'good' : 'bad';
-
-  drawChart(start, close, target, today, cum);
-  renderAccounts();
-  renderMarkets(today);
-  renderDaily(today, required);
-  renderHealth(today);
+  return {start, close, evalEnd, target, totalDays, elapsed, remDays, inEval: diffDays(close, today) > 0,
+          totalRegs, totalGw, totalSpend, lastSpend, cpa, pace, required, cum, same150, expected};
 }
 
-function setText(id, t){ document.getElementById(id).textContent = t; }
+/* ---------- render ---------- */
+function render(today){
+  const k = compute(today);
+  setText('hdrSub', `التسجيل: ${dShort(k.start)} – ${dShort(k.close)} (${k.totalDays} يوم) · فترة التقييم لحد ${dShort(k.evalEnd)} · الهدف: ${fmtInt(k.target)} متدرب · USD`);
+  document.getElementById('chip').innerHTML = k.inEval
+    ? `فترة التقييم · فاضل <b>${Math.max(diffDays(today, k.evalEnd) + 1, 0)}</b> يوم`
+    : `اليوم <b>${k.elapsed}</b> من ${k.totalDays} · فاضل <b>${Math.max(k.remDays, 0)}</b> يوم على القفل`;
 
-function drawChart(start, close, target, today, cum){
-  const total = diffDays(start, close) + 1;
+  const nt = document.getElementById('notice');
+  if (k.totalRegs === 0){ nt.className = 'notice on'; nt.textContent = 'بداية الدفعة — الأرقام بتظهر مع أول رسالة تسجيلات، والصرف بيتسحب أول مزامنة الصبح.'; }
+  else nt.className = 'notice';
+
+  renderOverview(k);
+  renderMarkets(today);
+  renderSpend(k, today);
+  renderDaily(today);
+  renderWeekly(k, today);
+  renderHealthBanner(today);
+}
+
+function renderOverview(k){
+  setText('cRegs', fmtInt(k.totalRegs));
+  setText('cRegsSub', `${(k.totalRegs / k.target * 100).toFixed(1)}% من ${fmtInt(k.target)}`);
+  setText('cSpend', fmtMoney(k.totalSpend));
+  setText('cSpendSub', k.lastSpend ? `5 حسابات · حتى ${dShort(k.lastSpend.date)}` : 'مفيش صرف متسحب لسه');
+  setText('cCpa', k.cpa == null ? '—' : '$' + k.cpa.toFixed(1));
+  setText('cCpaSub', `دفعة 150: $${N(state.cfg.b150_cpa_main).toFixed(1)}`);
+  setText('cPace', k.pace == null ? '—' : k.pace.toFixed(1));
+  const ps = document.getElementById('cPaceSub');
+  if (k.required == null){ ps.textContent = 'التسجيل اتقفل'; ps.className = 'sub'; }
+  else { ps.textContent = `المطلوب: ${k.required.toFixed(1)}/يوم`; ps.className = 'sub ' + (k.pace != null && k.pace >= k.required ? 'good' : 'bad'); }
+
+  const pct = Math.min(k.totalRegs / k.target * 100, 100);
+  document.getElementById('pFill').style.width = pct + '%';
+  document.getElementById('pMark').style.right = Math.min(k.expected / k.target * 100, 100) + '%';
+  setText('pLbl', `${fmtInt(k.totalRegs)} / ${fmtInt(k.target)} (${pct.toFixed(1)}%)`);
+  const gap = k.totalRegs - k.expected, pe = document.getElementById('pExp');
+  pe.textContent = `المفروض النهارده: ${fmtInt(k.expected)} · ${gap >= 0 ? 'متقدمين' : 'متأخرين'} ${fmtInt(Math.abs(gap))}`;
+  pe.className = gap >= 0 ? 'good' : 'bad';
+
+  // health table
+  const tgtSpend = N(state.cfg.b151_daily_spend_target) || 500;
+  const lastDaySpend = k.lastSpend ? N(k.lastSpend.spend) : null;
+  const gwShare = k.totalRegs ? k.totalGw / k.totalRegs * 100 : null;
+  const cpa150 = N(state.cfg.b150_cpa_main), gw150 = N(state.cfg.b150_gw_share);
+  const st = (ok, wait) => wait ? '<span class="st-wait">— بانتظار البيانات</span>'
+    : ok ? '<span class="st-good">✔ كويس</span>' : '<span class="st-bad">✖ محتاج انتباه</span>';
+  const rows = [
+    ['تكلفة المتدرب (CPA)', k.cpa == null ? '—' : '$' + k.cpa.toFixed(1), `دفعة 150: $${cpa150.toFixed(1)}`, st(k.cpa != null && k.cpa <= cpa150, k.cpa == null)],
+    ['المعدل اليومي (آخر 7 أيام)', k.pace == null ? '—' : k.pace.toFixed(1) + '/يوم', k.required == null ? '—' : `المطلوب: ${k.required.toFixed(1)}/يوم`, st(k.pace != null && k.required != null && k.pace >= k.required, k.pace == null)],
+    ['التراكمي', fmtInt(k.totalRegs), `دفعة 150 في نفس اليوم: ${fmtInt(k.same150)}`, st(k.totalRegs >= k.same150, k.elapsed === 0)],
+    ['الصرف اليومي (آخر يوم متسحب)', lastDaySpend == null ? '—' : fmtMoney(lastDaySpend), `هدف التخفيض: $${tgtSpend}`, st(lastDaySpend != null && lastDaySpend <= tgtSpend, lastDaySpend == null)],
+    ['نسبة البوابة', gwShare == null ? '—' : gwShare.toFixed(1) + '%', `دفعة 150: ${gw150.toFixed(1)}%`, gwShare == null ? st(false, true) : '<span class="st-wait">للمتابعة</span>'],
+  ];
+  document.getElementById('hBody').innerHTML = rows.map(r => `<tr><td class="name">${r[0]}</td><td><b>${r[1]}</b></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+
+  if (activeTab === 'overview') drawChart(k);
+}
+
+function drawChart(k){
+  const today = cairoToday();
   const labels = [], targetLine = [], actual = [], bars = [], line150 = [];
   const byDate = Object.fromEntries(state.daily.map(r => [r.date, r]));
   let run = 0;
-  for (let i = 0; i < total; i++){
-    const dt = addDays(start, i);
+  for (let i = 0; i < k.totalDays; i++){
+    const dt = addDays(k.start, i);
     labels.push(dShort(dt));
-    targetLine.push(shapedTarget(cum, i + 1, total, target));
-    line150.push(i < cum.length ? cum[i] : null);
-    if (dt <= today){
-      const r = byDate[dt]; const v = r ? N(r.regs) : 0;
-      run += v; actual.push(run); bars.push(v);
-    } else { actual.push(null); bars.push(null); }
+    targetLine.push(shapedTarget(k.cum, i + 1, k.totalDays, k.target));
+    line150.push(i < k.cum.length ? k.cum[i] : null);
+    if (dt <= today){ const v = byDate[dt] ? N(byDate[dt].regs) : 0; run += v; actual.push(run); bars.push(v); }
+    else { actual.push(null); bars.push(null); }
   }
   if (chart) chart.destroy();
   const F = {family:'"Segoe UI", Tahoma, Arial, sans-serif'};
   chart = new Chart(document.getElementById('chartPath'), {
     data:{labels, datasets:[
-      {type:'line', label:'دفعة 151', data:actual, borderColor:'#c9a24a', backgroundColor:'#c9a24a', borderWidth:3, pointRadius:0, tension:.25, yAxisID:'y', spanGaps:false},
+      {type:'line', label:'دفعة 151', data:actual, borderColor:'#c9a24a', backgroundColor:'#c9a24a', borderWidth:3, pointRadius:0, tension:.25, yAxisID:'y'},
       {type:'line', label:'الهدف (بشكل منحنى 150)', data:targetLine, borderColor:'#1e8449', borderDash:[6,4], borderWidth:2, pointRadius:0, yAxisID:'y'},
       {type:'line', label:'دفعة 150 (نفس اليوم)', data:line150, borderColor:'#9aa9b0', borderWidth:2, pointRadius:0, tension:.25, yAxisID:'y'},
       {type:'bar', label:'تسجيلات اليوم', data:bars, backgroundColor:'rgba(13,79,79,.35)', yAxisID:'y1'}
@@ -324,33 +381,15 @@ function drawChart(start, close, target, today, cum){
       plugins:{legend:{labels:{font:F}}, tooltip:{rtl:true}},
       scales:{x:{ticks:{font:F, maxTicksLimit:12}},
         y:{position:'right', beginAtZero:true, title:{display:true, text:'تراكمي', font:F}},
-        y1:{position:'left', beginAtZero:true, grid:{drawOnChartArea:false}, title:{display:true, text:'يومي', font:F}}}}
+        y1:{position:'left', beginAtZero:true, suggestedMax:10, grid:{drawOnChartArea:false}, title:{display:true, text:'يومي', font:F}}}}
   });
 }
 
-const ACC = ['1716202129023827', '277148180530185', '482408395164079', '754398562232744'];
-function renderAccounts(){
-  const tgt = N(state.cfg.b151_daily_spend_target) || 500;
-  const by = {};
-  state.acc.forEach(r => { (by[r.date] = by[r.date] || {})[r.account_id] = (by[r.date][r.account_id] || 0) + N(r.spend); });
-  const dates = Object.keys(by).sort().reverse().slice(0, 7);
-  document.getElementById('accHint').textContent = `آخر ${dates.length} أيام صرفها اتسحب · هدف التخفيض: $${tgt}/يوم لكل الحسابات.`;
-  const body = document.getElementById('aBody');
-  if (!dates.length){ body.innerHTML = '<tr><td colspan="7" class="empty">مفيش صرف متسحب.</td></tr>'; return; }
-  body.innerHTML = dates.map(dt => {
-    const v = ACC.map(a => by[dt][a] || 0);
-    const t = v.reduce((s, x) => s + x, 0);
-    const over = t - tgt;
-    return `<tr><td>${dShort(dt)}</td>${v.map(x => `<td>${fmtMoney(x)}</td>`).join('')}<td><b>${fmtMoney(t)}</b></td>
-      <td class="${over > 0 ? 'over' : 'under'}">${over > 0 ? '+' + fmtMoney(over) : '✔ ' + fmtMoney(-over)}</td></tr>`;
-  }).join('');
-}
-
-function sortMarkets(k){
-  if (mSort.k === k) mSort.dir *= -1; else { mSort.k = k; mSort.dir = k === 'market' ? 1 : -1; }
+/* ---------- markets ---------- */
+function sortMarkets(key){
+  if (mSort.k === key) mSort.dir *= -1; else { mSort.k = key; mSort.dir = key === 'market' ? 1 : -1; }
   renderMarkets(cairoToday());
 }
-
 function renderMarkets(today){
   const l7From = addDays(today, -7), l7To = addDays(today, -1), p7From = addDays(today, -14), p7To = addDays(today, -8);
   const last7 = {}, prev7 = {};
@@ -358,70 +397,133 @@ function renderMarkets(today){
     if (r.date >= l7From && r.date <= l7To) last7[r.market] = (last7[r.market] || 0) + N(r.total_regs);
     else if (r.date >= p7From && r.date <= p7To) prev7[r.market] = (prev7[r.market] || 0) + N(r.total_regs);
   });
-  let rows = state.markets.map(m => ({
+  const rows = state.markets.map(m => ({
     market:m.market, direct_regs:N(m.direct_regs), gateway_regs:N(m.gateway_regs), paypal_regs:N(m.paypal_regs),
     total_regs:N(m.total_regs), spend:N(m.spend), cpa: N(m.total_regs) > 0 ? N(m.spend) / N(m.total_regs) : null,
-    last7: last7[m.market] || 0, prev7: prev7[m.market] || 0,
-    unmapped: String(m.market).startsWith('غير مربوط')
+    last7: last7[m.market] || 0, prev7: prev7[m.market] || 0, unmapped: String(m.market).startsWith('غير مربوط')
   }));
-  const k = mSort.k, dir = mSort.dir;
+  const key = mSort.k, dir = mSort.dir;
   rows.sort((a, b) => {
     if (a.unmapped !== b.unmapped) return a.unmapped ? 1 : -1;
-    if (k === 'market') return dir * String(a.market).localeCompare(String(b.market), 'ar');
-    const va = a[k], vb = b[k];
+    if (key === 'market') return dir * String(a.market).localeCompare(String(b.market), 'ar');
+    const va = a[key], vb = b[key];
     if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1;
     return dir * (va - vb) || (b.spend - a.spend);
   });
   const body = document.getElementById('mBody');
-  if (!rows.length){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش تسجيلات أو صرف للدفعة 151.</td></tr>'; return; }
-  const tot = rows.reduce((s, r) => { s.d += r.direct_regs; s.g += r.gateway_regs; s.p += r.paypal_regs; s.t += r.total_regs; s.s += r.spend; s.l += r.last7; return s; }, {d:0,g:0,p:0,t:0,s:0,l:0});
-  body.innerHTML = rows.map(r => {
-    let tr = '<span class="flat">—</span>';
-    if (r.last7 > r.prev7) tr = `<span class="up">▲ ${r.prev7}→${r.last7}</span>`;
-    else if (r.last7 < r.prev7) tr = `<span class="down">▼ ${r.prev7}→${r.last7}</span>`;
-    return `<tr class="${r.total_regs === 0 ? 'dim' : ''}">
-      <td class="name">${r.market}</td><td>${fmtInt(r.direct_regs)}</td><td>${fmtInt(r.gateway_regs)}</td><td>${fmtInt(r.paypal_regs)}</td>
-      <td><b>${fmtInt(r.total_regs)}</b></td><td>${fmtMoney(r.spend)}</td><td>${fmtMoney1(r.cpa)}</td>
-      <td>${fmtInt(r.last7)}</td><td>${tr}</td></tr>`;
-  }).join('') + `<tr class="tot"><td class="name">الإجمالي</td><td>${fmtInt(tot.d)}</td><td>${fmtInt(tot.g)}</td><td>${fmtInt(tot.p)}</td>
-      <td>${fmtInt(tot.t)}</td><td>${fmtMoney(tot.s)}</td><td>${tot.t ? fmtMoney1(tot.s / tot.t) : '—'}</td><td>${fmtInt(tot.l)}</td><td></td></tr>`;
+  if (!rows.length){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش تسجيلات أو صرف للدفعة 151.</td></tr>'; }
+  else {
+    const t = rows.reduce((s, r) => { s.d += r.direct_regs; s.g += r.gateway_regs; s.p += r.paypal_regs; s.t += r.total_regs; s.s += r.spend; s.l += r.last7; return s; }, {d:0,g:0,p:0,t:0,s:0,l:0});
+    body.innerHTML = rows.map(r => {
+      let tr = '<span class="flat">—</span>';
+      if (r.last7 > r.prev7) tr = `<span class="up">▲ ${r.prev7}→${r.last7}</span>`;
+      else if (r.last7 < r.prev7) tr = `<span class="down">▼ ${r.prev7}→${r.last7}</span>`;
+      return `<tr class="${r.total_regs === 0 ? 'dim' : ''}"><td class="name">${r.market}</td><td>${fmtInt(r.direct_regs)}</td><td>${fmtInt(r.gateway_regs)}</td><td>${fmtInt(r.paypal_regs)}</td>
+        <td><b>${fmtInt(r.total_regs)}</b></td><td>${fmtMoney(r.spend)}</td><td>${fmtMoney1(r.cpa)}</td><td>${fmtInt(r.last7)}</td><td>${tr}</td></tr>`;
+    }).join('') + `<tr class="tot"><td class="name">الإجمالي</td><td>${fmtInt(t.d)}</td><td>${fmtInt(t.g)}</td><td>${fmtInt(t.p)}</td>
+      <td>${fmtInt(t.t)}</td><td>${fmtMoney(t.s)}</td><td>${t.t ? fmtMoney1(t.s / t.t) : '—'}</td><td>${fmtInt(t.l)}</td><td></td></tr>`;
+  }
   document.querySelectorAll('#mHead th.sortable').forEach(th => {
     th.onclick = () => sortMarkets(th.dataset.k);
     th.textContent = th.textContent.replace(/ [▲▼]$/, '') + (th.dataset.k === mSort.k ? (mSort.dir === 1 ? ' ▲' : ' ▼') : '');
   });
 }
 
-function renderDaily(today, required){
-  const rows = [...state.daily].reverse();
-  const body = document.getElementById('dBody');
-  if (!rows.length){ body.innerHTML = '<tr><td colspan="8" class="empty">لا توجد أيام بعد.</td></tr>'; return; }
+/* ---------- spend by account ---------- */
+function renderSpend(k, today){
+  const tgt = N(state.cfg.b151_daily_spend_target) || 500;
+  // batch-to-date per account
+  const tot = {}; let all = 0;
+  state.acc.filter(r => r.date >= k.start).forEach(r => {
+    const t = tot[r.account_id] = tot[r.account_id] || {s:0, c:0};
+    t.s += N(r.spend); t.c += N(r.conv); all += N(r.spend);
+  });
+  document.getElementById('aTotBody').innerHTML = ACCOUNTS.map(([id, name]) => {
+    const t = tot[id] || {s:0, c:0};
+    return `<tr class="${t.s === 0 ? 'dim' : ''}"><td class="name">${name}</td><td><b>${fmtMoney(t.s)}</b></td><td>${fmtInt(t.c)}</td>
+      <td>${t.c ? fmtMoney2(t.s / t.c) : '—'}</td><td>${all ? (t.s / all * 100).toFixed(1) + '%' : '—'}</td></tr>`;
+  }).join('') + `<tr class="tot"><td class="name">الإجمالي</td><td>${fmtMoney(all)}</td><td></td><td></td><td>${all ? '100%' : '—'}</td></tr>`;
+
+  // daily per account (last 14 synced days)
+  const by = {};
+  state.acc.forEach(r => { (by[r.date] = by[r.date] || {})[r.account_id] = (by[r.date][r.account_id] || 0) + N(r.spend); });
+  const dates = Object.keys(by).sort().reverse().slice(0, 14);
+  setText('accHint', `آخر ${dates.length} يوم صرفهم اتسحب · هدف التخفيض: $${tgt}/يوم لكل الحسابات مجموعة.`);
+  document.getElementById('aHead').innerHTML = '<th>التاريخ</th>' + ACCOUNTS.map(a => `<th>${a[1]}</th>`).join('') + '<th>الإجمالي</th><th>عن الهدف</th>';
+  const body = document.getElementById('aBody');
+  if (!dates.length){ body.innerHTML = `<tr><td colspan="${ACCOUNTS.length + 3}" class="empty">مفيش صرف متسحب.</td></tr>`; return; }
+  body.innerHTML = dates.map(dt => {
+    const v = ACCOUNTS.map(([id]) => by[dt][id] || 0), t = v.reduce((s, x) => s + x, 0), over = t - tgt;
+    return `<tr><td>${dShort(dt)}${dt < k.start ? ' <small>(قبل 151)</small>' : ''}</td>${v.map(x => `<td>${fmtMoney(x)}</td>`).join('')}<td><b>${fmtMoney(t)}</b></td>
+      <td class="${over > 0 ? 'over' : 'under'}">${over > 0 ? '+' + fmtMoney(over) : '✔ ' + fmtMoney(-over)}</td></tr>`;
+  }).join('');
+}
+
+/* ---------- daily ---------- */
+function renderDaily(today){
+  const rows = [...state.daily].reverse(), body = document.getElementById('dBody');
+  if (!rows.length){ body.innerHTML = '<tr><td colspan="9" class="empty">لا توجد أيام بعد.</td></tr>'; return; }
   body.innerHTML = rows.map(r => {
     const pending = N(r.spend) === 0 && r.date >= addDays(today, -1);
-    return `<tr>
-      <td>${dShort(r.date)}${r.phase === 'eval' ? ' <small>(تقييم)</small>' : ''}</td>
+    return `<tr><td>${dShort(r.date)}${r.phase === 'eval' ? ' <small>(تقييم)</small>' : ''}</td>
       <td><b>${fmtInt(r.regs)}</b></td><td>${fmtInt(r.gateway_regs)}</td>
-      <td>${pending ? '<small style="color:#98a6ad">يتسحب بكرة</small>' : fmtMoney(r.spend)}</td>
+      <td>${pending ? '<small style="color:#98a6ad">يتسحب بكرة</small>' : fmtMoney(r.spend)}</td><td>${pending ? '—' : fmtInt(r.conv)}</td>
       <td>${fmtMoney1(r.cpa_day)}</td><td>${fmtInt(r.cum_regs)}</td><td>${fmtMoney1(r.cum_cpa)}</td>
       <td>${r.required_per_day == null ? '—' : N(r.required_per_day).toFixed(1)}</td></tr>`;
   }).join('');
 }
 
-function renderHealth(today){
+/* ---------- weekly ---------- */
+function renderWeekly(k, today){
+  const byDate = Object.fromEntries(state.daily.map(r => [r.date, r]));
+  const weeks = [];
+  for (let w = 0; ; w++){
+    const from = addDays(k.start, w * 7); if (from > k.close) break;
+    const to = minDate(addDays(from, 6), k.close);
+    weeks.push({name:`الأسبوع ${w + 1}`, from, to, endDay: diffDays(k.start, to) + 1});
+  }
+  weeks.push({name:'فترة التقييم', from: addDays(k.close, 1), to: k.evalEnd, endDay: null});
+  let cumActual = 0;
+  document.getElementById('wBody').innerHTML = weeks.map(w => {
+    let regs = 0, spend = 0;
+    for (let dt = w.from; dt <= w.to; dt = addDays(dt, 1)){ const r = byDate[dt]; if (r){ regs += N(r.regs); spend += N(r.spend); } }
+    const started = w.from <= today;
+    cumActual += regs;
+    const tgt = w.endDay ? shapedTarget(k.cum, w.endDay, k.totalDays, k.target) : null;
+    let st = '<span class="st-wait">— لسه</span>';
+    if (started && tgt != null){
+      const refTgt = w.to <= today ? tgt : shapedTarget(k.cum, Math.max(diffDays(k.start, today) + 1, 1), k.totalDays, k.target);
+      st = cumActual >= refTgt ? '<span class="st-good">✔ على المسار</span>' : cumActual >= refTgt * 0.85 ? '<span class="st-warn">⚠ قريب</span>' : '<span class="st-bad">✖ متأخر</span>';
+      if (w.to > today) st += ' <small>(جاري)</small>';
+    } else if (started) st = '<span class="st-wait">جاري</span>';
+    return `<tr class="${started ? '' : 'dim'}"><td class="name">${w.name}</td><td>${dShort(w.from)} – ${dShort(w.to)}</td>
+      <td>${started ? fmtInt(regs) : '—'}</td><td>${started ? fmtMoney(spend) : '—'}</td>
+      <td>${tgt == null ? '—' : fmtInt(tgt)}</td><td>${started ? '<b>' + fmtInt(cumActual) + '</b>' : '—'}</td><td>${st}</td></tr>`;
+  }).join('');
+}
+
+/* ---------- health banner ---------- */
+function renderHealthBanner(today){
   const banner = document.getElementById('banner');
   const msgs = []; let level = '';
   const s = state.sync;
   if (!s){ msgs.push('مفيش أي مزامنة ناجحة مسجلة.'); level = 'bad'; }
   else if (s.until < addDays(today, -2)){ msgs.push(`⚠ المزامنة متأخرة: آخر صرف متسحب يوم ${dShort(s.until)}. اتأكد من التوكن.`); level = 'bad'; }
   const exp = state.cfg.token_expiry;
-  if (exp){
-    const left = diffDays(today, exp);
-    if (left <= 14){ msgs.push(`⚠ توكن Meta بينتهي ${dShort(exp)} (فاضل ${left} يوم).`); if (!level) level = 'warn'; }
-  }
+  if (exp){ const left = diffDays(today, exp); if (left <= 14){ msgs.push(`⚠ توكن Meta بينتهي ${dShort(exp)} (فاضل ${left} يوم).`); if (!level) level = 'warn'; } }
   if (msgs.length){ banner.className = 'banner ' + level; banner.textContent = msgs.join(' · '); }
-  document.getElementById('metaLine').textContent = s
+  setText('metaLine', s
     ? `آخر مزامنة صرف ناجحة: بيانات ${dShort(s.until)} · ${new Date(s.started_at).toLocaleString('en-GB', {timeZone:'Africa/Cairo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} (القاهرة)`
-    : '—';
+    : '—');
 }
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => {
+  activeTab = b.dataset.tab;
+  document.querySelectorAll('.tab-btn').forEach(x => x.classList.toggle('active', x === b));
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x.id === 'tab-' + activeTab));
+  if (activeTab === 'overview' && state.cfg.b151_start) drawChart(compute(cairoToday()));
+}));
 
 loadAll();
 </script>
