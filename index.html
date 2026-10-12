@@ -25,6 +25,10 @@ body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color
 .banner.warn{display:block;background:var(--gold-light);color:#8a6d1f;border:1px solid var(--gold)}
 .notice{display:none;border-radius:8px;padding:10px 14px;font-size:14px;margin-bottom:14px;background:#e8f2f2;color:var(--navy);border:1px solid #b9d3d3}
 .notice.on{display:block}
+.alerts{display:none;background:var(--red-light);border:1px solid var(--red);border-radius:8px;padding:12px 14px;margin-bottom:16px}
+.alerts.on{display:block}
+.alerts h4{color:var(--red);font-size:15px;margin-bottom:6px}
+.alerts li{font-size:13.5px;margin:3px 18px 0 0;color:var(--ink)}
 .tabs{display:flex;gap:8px;margin:4px 0 16px;flex-wrap:wrap;align-items:center}
 .tab-btn{background:#fff;border:1px solid var(--line);border-radius:8px 8px 0 0;padding:10px 20px;font-size:15px;font-family:inherit;cursor:pointer;color:var(--ink)}
 .tab-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -88,6 +92,7 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
     <button class="tab-btn active" data-tab="overview">نظرة عامة</button>
     <button class="tab-btn" data-tab="markets">الأسواق</button>
     <button class="tab-btn" data-tab="spend">الصرف والحسابات</button>
+    <button class="tab-btn" data-tab="lines">الخطوط والمناديب</button>
     <button class="tab-btn" data-tab="daily">السجل اليومي</button>
     <button class="tab-btn" data-tab="weekly">المسار الأسبوعي</button>
     <button class="btn" onclick="loadAll()">⟳ تحديث</button>
@@ -96,6 +101,7 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
 
   <!-- ======== نظرة عامة ======== -->
   <div class="tab active" id="tab-overview">
+    <div class="alerts" id="alerts"><h4>🚨 صرف من غير تسجيلات</h4><ul id="alertList"></ul></div>
     <div class="cards">
       <div class="card gold"><div class="num" id="cRegs">—</div><div class="lbl">إجمالي التسجيلات</div><div class="sub" id="cRegsSub"></div></div>
       <div class="card"><div class="num" id="cSpend">—</div><div class="lbl">إجمالي الصرف</div><div class="sub" id="cSpendSub"></div></div>
@@ -129,7 +135,7 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
   <div class="tab" id="tab-markets">
     <div class="panel">
       <h3>الأسواق</h3>
-      <div class="hint">البوابة والباي بال أعمدة منفصلة عن المباشر. الصرف من بداية الدفعة حسب بلد عرض الإعلان. الاتجاه = آخر 7 أيام مقابل الـ7 اللي قبلها. اضغط على العنوان للترتيب.</div>
+      <div class="hint">البوابة والباي بال أعمدة منفصلة عن المباشر. الصرف والمحادثات من بداية الدفعة حسب بلد عرض الإعلان. التحويل = التسجيلات ÷ المحادثات (دفعة 150: <span id="conv150Hint">—</span>). الاتجاه = آخر 7 أيام مقابل الـ7 اللي قبلها. اضغط على العنوان للترتيب.</div>
       <div class="tbl-scroll"><table>
         <thead><tr id="mHead">
           <th class="sortable" data-k="market">السوق</th>
@@ -139,6 +145,8 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
           <th class="sortable" data-k="total_regs">الإجمالي</th>
           <th class="sortable" data-k="spend">الصرف</th>
           <th class="sortable" data-k="cpa">CPA</th>
+          <th class="sortable" data-k="conv">المحادثات</th>
+          <th class="sortable" data-k="conv_rate">التحويل</th>
           <th class="sortable" data-k="last7">آخر 7 أيام</th>
           <th>الاتجاه</th>
         </tr></thead>
@@ -162,6 +170,18 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
       <div class="tbl-scroll"><table>
         <thead><tr id="aHead"></tr></thead>
         <tbody id="aBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ======== الخطوط والمناديب ======== -->
+  <div class="tab" id="tab-lines">
+    <div class="panel">
+      <h3>الخطوط والمناديب — آخر 7 أيام</h3>
+      <div class="hint">وصل/اتردّ = من تقرير الفريق اليومي. التسجيلات = اللي اتسجلت ومعاها رقم الخط. الرد = اتردّ ÷ وصل · التحويل = تسجيلات ÷ وصل.</div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>المندوب</th><th>السوق</th><th>الخط</th><th>وصل</th><th>اتردّ</th><th>نسبة الرد</th><th>تسجيلات</th><th>التحويل</th><th>آخر تقرير</th></tr></thead>
+        <tbody id="lBody"></tbody>
       </table></div>
     </div>
   </div>
@@ -207,7 +227,7 @@ const ACCOUNTS = [
   ['754398562232744',  'IG الشخصي'],
 ];
 
-let state = {cfg:{}, daily:[], markets:[], md:[], sync:null, d150:[], acc:[]};
+let state = {cfg:{}, daily:[], markets:[], md:[], sync:null, d150:[], acc:[], lines:[], lineDays:[]};
 let mSort = {k:'total_regs', dir:-1};
 let chart = null;
 let activeTab = 'overview';
@@ -238,18 +258,20 @@ async function loadAll(){
   banner.className = 'banner'; banner.textContent = '';
   try {
     const today = cairoToday();
-    const cfgRows = await q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,b151_daily_spend_target,b150_cpa_main,b150_gw_share,token_expiry,campaign_start,batch_close)');
+    const cfgRows = await q('config?select=key,value&key=in.(b151_start,b151_close,b151_eval_end,b151_target,b151_daily_spend_target,b150_cpa_main,b150_gw_share,b150_conv_rate,b151_alert_spend,b151_alert_days,token_expiry,campaign_start,batch_close)');
     state.cfg = Object.fromEntries(cfgRows.map(r => [r.key, r.value]));
     const accFrom = minDate(state.cfg.b151_start, addDays(today, -14));
-    const [daily, markets, sync, md, d150, acc] = await Promise.all([
+    const [daily, markets, sync, md, d150, acc, lines, lineDays] = await Promise.all([
       q('b151_daily_v1?select=*&order=date.asc'),
       q('b151_markets_v1?select=*'),
       q('sync_runs?select=started_at,until&status=eq.success&run_mode=eq.production&order=started_at.desc&limit=1'),
-      q('b151_market_daily_v1?select=date,market,total_regs&date=gte.' + addDays(today, -14)),
+      q('b151_market_daily_v1?select=date,market,total_regs,spend&date=gte.' + addDays(today, -14)),
       q('daily?select=date,regs&order=date.asc'),
-      q('meta_account_daily?select=date,account_id,spend,conv&date=gte.' + accFrom + '&order=date.desc&limit=1000')
+      q('meta_account_daily?select=date,account_id,spend,conv&date=gte.' + accFrom + '&order=date.desc&limit=1000'),
+      q('wa_lines?select=route_id,rep_name,market,active&order=market.asc'),
+      q('b151_lines_v1?select=*&date=gte.' + addDays(today, -7) + '&limit=1000')
     ]);
-    Object.assign(state, {daily, markets, md, d150, acc, sync: sync[0] || null});
+    Object.assign(state, {daily, markets, md, d150, acc, lines, lineDays, sync: sync[0] || null});
     render(today);
   } catch (e) {
     banner.className = 'banner bad';
@@ -286,6 +308,8 @@ function compute(today){
   const spent = d.filter(r => N(r.spend) > 0);
   const lastSpend = spent.length ? spent[spent.length - 1] : null;
   const cpa = lastSpend && N(lastSpend.cum_regs) > 0 ? N(lastSpend.cum_spend) / N(lastSpend.cum_regs) : null;
+  const convThru = lastSpend ? d.filter(r => r.date <= lastSpend.date).reduce((s, r) => s + N(r.conv), 0) : 0;
+  const convRate = lastSpend && convThru > 0 ? N(lastSpend.cum_regs) / convThru * 100 : null;
   const win = d.filter(r => r.date >= addDays(today, -7) && r.date <= addDays(today, -1));
   const pace = win.length ? win.reduce((s, r) => s + N(r.regs), 0) / win.length : null;
   const required = remDays > 0 ? Math.max(target - totalRegs, 0) / remDays : null;
@@ -293,7 +317,7 @@ function compute(today){
   const same150 = elapsed ? cum[Math.min(elapsed, cum.length) - 1] : 0;
   const expected = elapsed ? shapedTarget(cum, elapsed, totalDays, target) : 0;
   return {start, close, evalEnd, target, totalDays, elapsed, remDays, inEval: diffDays(close, today) > 0,
-          totalRegs, totalGw, totalSpend, lastSpend, cpa, pace, required, cum, same150, expected};
+          totalRegs, totalGw, totalSpend, lastSpend, cpa, convRate, pace, required, cum, same150, expected};
 }
 
 /* ---------- render ---------- */
@@ -311,6 +335,8 @@ function render(today){
   renderOverview(k);
   renderMarkets(today);
   renderSpend(k, today);
+  renderLines(today);
+  renderAlerts(today);
   renderDaily(today);
   renderWeekly(k, today);
   renderHealthBanner(today);
@@ -346,6 +372,7 @@ function renderOverview(k){
   const rows = [
     ['تكلفة المتدرب (CPA)', k.cpa == null ? '—' : '$' + k.cpa.toFixed(1), `دفعة 150: $${cpa150.toFixed(1)}`, st(k.cpa != null && k.cpa <= cpa150, k.cpa == null)],
     ['المعدل اليومي (آخر 7 أيام)', k.pace == null ? '—' : k.pace.toFixed(1) + '/يوم', k.required == null ? '—' : `المطلوب: ${k.required.toFixed(1)}/يوم`, st(k.pace != null && k.required != null && k.pace >= k.required, k.pace == null)],
+    ['معدل التحويل (محادثة ← تسجيل)', k.convRate == null ? '—' : k.convRate.toFixed(2) + '%', `دفعة 150: ${N(state.cfg.b150_conv_rate).toFixed(1)}%`, st(k.convRate != null && k.convRate >= N(state.cfg.b150_conv_rate), k.convRate == null)],
     ['التراكمي', fmtInt(k.totalRegs), `دفعة 150 في نفس اليوم: ${fmtInt(k.same150)}`, st(k.totalRegs >= k.same150, k.elapsed === 0)],
     ['الصرف اليومي (آخر يوم متسحب)', lastDaySpend == null ? '—' : fmtMoney(lastDaySpend), `هدف التخفيض: $${tgtSpend}`, st(lastDaySpend != null && lastDaySpend <= tgtSpend, lastDaySpend == null)],
     ['نسبة البوابة', gwShare == null ? '—' : gwShare.toFixed(1) + '%', `دفعة 150: ${gw150.toFixed(1)}%`, gwShare == null ? st(false, true) : '<span class="st-wait">للمتابعة</span>'],
@@ -400,6 +427,7 @@ function renderMarkets(today){
   const rows = state.markets.map(m => ({
     market:m.market, direct_regs:N(m.direct_regs), gateway_regs:N(m.gateway_regs), paypal_regs:N(m.paypal_regs),
     total_regs:N(m.total_regs), spend:N(m.spend), cpa: N(m.total_regs) > 0 ? N(m.spend) / N(m.total_regs) : null,
+    conv:N(m.conv), conv_rate: N(m.conv) > 0 ? N(m.total_regs) / N(m.conv) * 100 : null,
     last7: last7[m.market] || 0, prev7: prev7[m.market] || 0, unmapped: String(m.market).startsWith('غير مربوط')
   }));
   const key = mSort.k, dir = mSort.dir;
@@ -411,17 +439,18 @@ function renderMarkets(today){
     return dir * (va - vb) || (b.spend - a.spend);
   });
   const body = document.getElementById('mBody');
-  if (!rows.length){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش تسجيلات أو صرف للدفعة 151.</td></tr>'; }
+  setText('conv150Hint', N(state.cfg.b150_conv_rate).toFixed(1) + '%');
+  if (!rows.length){ body.innerHTML = '<tr><td colspan="11" class="empty">لسه مفيش تسجيلات أو صرف للدفعة 151.</td></tr>'; }
   else {
-    const t = rows.reduce((s, r) => { s.d += r.direct_regs; s.g += r.gateway_regs; s.p += r.paypal_regs; s.t += r.total_regs; s.s += r.spend; s.l += r.last7; return s; }, {d:0,g:0,p:0,t:0,s:0,l:0});
+    const t = rows.reduce((s, r) => { s.d += r.direct_regs; s.g += r.gateway_regs; s.p += r.paypal_regs; s.t += r.total_regs; s.s += r.spend; s.c += r.conv; s.l += r.last7; return s; }, {d:0,g:0,p:0,t:0,s:0,c:0,l:0});
     body.innerHTML = rows.map(r => {
       let tr = '<span class="flat">—</span>';
       if (r.last7 > r.prev7) tr = `<span class="up">▲ ${r.prev7}→${r.last7}</span>`;
       else if (r.last7 < r.prev7) tr = `<span class="down">▼ ${r.prev7}→${r.last7}</span>`;
       return `<tr class="${r.total_regs === 0 ? 'dim' : ''}"><td class="name">${r.market}</td><td>${fmtInt(r.direct_regs)}</td><td>${fmtInt(r.gateway_regs)}</td><td>${fmtInt(r.paypal_regs)}</td>
-        <td><b>${fmtInt(r.total_regs)}</b></td><td>${fmtMoney(r.spend)}</td><td>${fmtMoney1(r.cpa)}</td><td>${fmtInt(r.last7)}</td><td>${tr}</td></tr>`;
+        <td><b>${fmtInt(r.total_regs)}</b></td><td>${fmtMoney(r.spend)}</td><td>${fmtMoney1(r.cpa)}</td><td>${fmtInt(r.conv)}</td><td>${r.conv_rate == null ? '—' : r.conv_rate.toFixed(2) + '%'}</td><td>${fmtInt(r.last7)}</td><td>${tr}</td></tr>`;
     }).join('') + `<tr class="tot"><td class="name">الإجمالي</td><td>${fmtInt(t.d)}</td><td>${fmtInt(t.g)}</td><td>${fmtInt(t.p)}</td>
-      <td>${fmtInt(t.t)}</td><td>${fmtMoney(t.s)}</td><td>${t.t ? fmtMoney1(t.s / t.t) : '—'}</td><td>${fmtInt(t.l)}</td><td></td></tr>`;
+      <td>${fmtInt(t.t)}</td><td>${fmtMoney(t.s)}</td><td>${t.t ? fmtMoney1(t.s / t.t) : '—'}</td><td>${fmtInt(t.c)}</td><td>${t.c ? (t.t / t.c * 100).toFixed(2) + '%' : '—'}</td><td>${fmtInt(t.l)}</td><td></td></tr>`;
   }
   document.querySelectorAll('#mHead th.sortable').forEach(th => {
     th.onclick = () => sortMarkets(th.dataset.k);
@@ -457,6 +486,53 @@ function renderSpend(k, today){
     return `<tr><td>${dShort(dt)}${dt < k.start ? ' <small>(قبل 151)</small>' : ''}</td>${v.map(x => `<td>${fmtMoney(x)}</td>`).join('')}<td><b>${fmtMoney(t)}</b></td>
       <td class="${over > 0 ? 'over' : 'under'}">${over > 0 ? '+' + fmtMoney(over) : '✔ ' + fmtMoney(-over)}</td></tr>`;
   }).join('');
+}
+
+/* ---------- lines & reps ---------- */
+function renderLines(today){
+  const from = addDays(today, -7), to = addDays(today, -1);
+  const agg = {};
+  state.lineDays.filter(r => r.date >= from && r.date <= to).forEach(r => {
+    const a = agg[r.route_id] = agg[r.route_id] || {rec:0, han:0, regs:0, recDays:0, last:null, rep:r.rep_name, market:r.market};
+    if (r.received != null){ a.rec += N(r.received); a.recDays++; }
+    if (r.handled != null) a.han += N(r.handled);
+    a.regs += N(r.regs);
+    if (r.received != null || r.handled != null){ if (!a.last || r.date > a.last) a.last = r.date; }
+  });
+  const known = new Set(state.lines.map(l => l.route_id));
+  const rows = state.lines.filter(l => l.active).map(l => ({id:l.route_id, ...(agg[l.route_id] || {rec:0, han:0, regs:0, recDays:0, last:null}), rep:l.rep_name, market:l.market}));
+  Object.keys(agg).filter(id => !known.has(id)).forEach(id => rows.push({id, ...agg[id], rep:'خط غير مسجّل', market:'—'}));
+  const anyData = rows.some(r => r.recDays || r.regs);
+  const body = document.getElementById('lBody');
+  if (!anyData){ body.innerHTML = '<tr><td colspan="9" class="empty">لسه مفيش أرقام من الفريق — بتظهر أول ما رسالة التسجيلات اليومية تيجي بالشكل الجديد (وصل / اتردّ لكل خط + رقم الخط مع كل تسجيل).</td></tr>'; return; }
+  rows.sort((a, b) => (b.rec - a.rec) || (b.regs - a.regs));
+  body.innerHTML = rows.map(r => {
+    const resp = r.rec ? r.han / r.rec * 100 : null, conv = r.rec ? r.regs / r.rec * 100 : null;
+    const cls = resp == null ? '' : resp >= 90 ? 'st-good' : resp >= 70 ? 'st-warn' : 'st-bad';
+    return `<tr class="${r.recDays || r.regs ? '' : 'dim'}"><td class="name">${r.rep}</td><td>${r.market || '—'}</td><td style="direction:ltr">${r.id}</td>
+      <td>${r.recDays ? fmtInt(r.rec) : '—'}</td><td>${r.recDays ? fmtInt(r.han) : '—'}</td>
+      <td>${resp == null ? '—' : `<span class="${cls}">${resp.toFixed(0)}%</span>`}</td>
+      <td>${fmtInt(r.regs)}</td><td>${conv == null ? '—' : conv.toFixed(1) + '%'}</td><td>${r.last ? dShort(r.last) : '—'}</td></tr>`;
+  }).join('');
+}
+
+/* ---------- alerts: spend with zero registrations ---------- */
+function renderAlerts(today){
+  const lim = N(state.cfg.b151_alert_spend) || 50, days = N(state.cfg.b151_alert_days) || 3;
+  const from = addDays(today, -days), to = addDays(today, -1);
+  const agg = {};
+  state.md.filter(r => r.date >= from && r.date <= to).forEach(r => {
+    const a = agg[r.market] = agg[r.market] || {spend:0, regs:0};
+    a.spend += N(r.spend); a.regs += N(r.total_regs);
+  });
+  const hits = Object.entries(agg)
+    .filter(([m, a]) => a.spend >= lim && a.regs === 0 && !m.startsWith('غير مربوط') && !m.includes('(IL)'))
+    .sort((x, y) => y[1].spend - x[1].spend);
+  const box = document.getElementById('alerts');
+  if (!hits.length){ box.className = 'alerts'; return; }
+  box.className = 'alerts on';
+  document.getElementById('alertList').innerHTML = hits.map(([m, a]) =>
+    `<li><b>${m}</b>: صرف ${fmtMoney(a.spend)} في آخر ${days} أيام (${dShort(from)} – ${dShort(to)}) وصفر تسجيلات</li>`).join('');
 }
 
 /* ---------- daily ---------- */
@@ -513,7 +589,7 @@ function renderHealthBanner(today){
   if (exp){ const left = diffDays(today, exp); if (left <= 14){ msgs.push(`⚠ توكن Meta بينتهي ${dShort(exp)} (فاضل ${left} يوم).`); if (!level) level = 'warn'; } }
   if (msgs.length){ banner.className = 'banner ' + level; banner.textContent = msgs.join(' · '); }
   setText('metaLine', s
-    ? `آخر مزامنة صرف ناجحة: بيانات ${dShort(s.until)} · ${new Date(s.started_at).toLocaleString('en-GB', {timeZone:'Africa/Cairo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} (القاهرة)`
+    ? `آخر مزامنة صرف ناجحة: بيانات ${dShort(s.until)} · ${new Date(s.started_at).toLocaleString('en-GB', {timeZone:'Africa/Cairo', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})} (القاهرة)` + (exp ? ` · توكن Meta بينتهي ~${dShort(exp)}` : '')
     : '—');
 }
 
