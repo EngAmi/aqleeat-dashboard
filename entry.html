@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>تقرير المندوب اليومي — عقليات</title>
+<style>
+:root{
+  --navy:#0d4f4f; --navy-dark:#0a4040; --gold:#c9a24a; --gold-light:#fbf4e2;
+  --green:#1e8449; --green-light:#edf7f0; --red:#c0392b; --red-light:#fdf0ef;
+  --ink:#20303a; --muted:#5a6b74; --line:#d5e2e2; --alt:#f3f8f8; --page:#eef3f3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;background:var(--page);color:var(--ink);min-height:100vh;padding-bottom:env(safe-area-inset-bottom,0px)}
+.header{background:linear-gradient(135deg,var(--navy),var(--navy-dark));color:#fff;padding:20px 16px;text-align:center}
+.header .org{color:var(--gold);font-size:12.5px;margin-bottom:4px}
+.header h1{font-size:21px}
+.wrap{max-width:560px;margin:0 auto;padding:16px 12px 40px}
+.card{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.07);margin-bottom:14px}
+.card h3{color:var(--navy);font-size:15.5px;margin-bottom:10px}
+label{display:block;font-size:13.5px;color:var(--muted);margin:10px 0 5px}
+select,input{width:100%;padding:12px;border:1px solid var(--line);border-radius:8px;font-size:16px;font-family:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dates{display:flex;gap:8px;flex-wrap:wrap}
+.dates button{flex:1;min-width:80px;padding:10px 6px;border:1px solid var(--line);background:#fff;border-radius:8px;font-family:inherit;font-size:14px;cursor:pointer}
+.dates button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.reg{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:10px;background:var(--alt)}
+.reg .top{display:flex;gap:8px;align-items:center}
+.reg .top select{flex:1}
+.reg .del{background:none;border:none;color:var(--red);font-size:22px;cursor:pointer;padding:0 6px}
+.types{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.types button{padding:9px 2px;border:1px solid var(--line);background:#fff;border-radius:8px;font-family:inherit;font-size:13px;cursor:pointer}
+.types button.on{background:var(--gold);color:#fff;border-color:var(--gold)}
+.stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:10px}
+.stepper button{width:44px;height:44px;border-radius:50%;border:1px solid var(--navy);background:#fff;color:var(--navy);font-size:24px;cursor:pointer;line-height:1}
+.stepper span{font-size:24px;font-weight:700;min-width:40px;text-align:center}
+.other{margin-top:8px;display:none}
+.add{width:100%;padding:12px;border:2px dashed var(--navy);background:#fff;color:var(--navy);border-radius:10px;font-family:inherit;font-size:15px;cursor:pointer}
+.total{display:flex;justify-content:space-between;font-size:15px;font-weight:700;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.submit{width:100%;padding:15px;background:var(--gold);color:#fff;border:none;border-radius:10px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer}
+.submit:disabled{opacity:.6;cursor:default}
+.msg{display:none;border-radius:10px;padding:14px;margin-bottom:14px;font-size:14.5px;line-height:1.8}
+.msg.ok{display:block;background:var(--green-light);color:var(--green);border:1px solid var(--green)}
+.msg.err{display:block;background:var(--red-light);color:var(--red);border:1px solid var(--red)}
+.warn{color:#9a7b1f;font-size:12.5px;margin-top:6px;display:none}
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="org">مؤسسة التدريبات العقلية</div>
+  <h1>تقرير المندوب اليومي</h1>
+</div>
+
+<div class="wrap">
+  <div class="msg" id="msg"></div>
+
+  <div class="card">
+    <h3>1 · مين إنت</h3>
+    <label for="rep">المندوب / الخط</label>
+    <select id="rep"><option value="">جاري التحميل…</option></select>
+    <label for="code">الكود السري (6 أرقام)</label>
+    <input id="code" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="••••••">
+  </div>
+
+  <div class="card">
+    <h3>2 · اليوم</h3>
+    <div class="dates" id="dates"></div>
+  </div>
+
+  <div class="card">
+    <h3>3 · المحادثات على الخط</h3>
+    <div class="row2">
+      <div><label for="rec">وصل (محادثات جديدة)</label><input id="rec" type="number" inputmode="numeric" min="0" max="5000" placeholder="0"></div>
+      <div><label for="han">اتردّ عليهم</label><input id="han" type="number" inputmode="numeric" min="0" max="5000" placeholder="0"></div>
+    </div>
+    <div class="warn" id="hanWarn">⚠ "اتردّ" أكبر من "وصل" — متأكد؟ (ممكن لو رديت على محادثات من أيام قبل كده)</div>
+  </div>
+
+  <div class="card">
+    <h3>4 · التسجيلات</h3>
+    <div id="regs"></div>
+    <button class="add" onclick="addReg()">+ إضافة دولة</button>
+    <div class="total"><span>إجمالي التسجيلات</span><span id="tot">0</span></div>
+    <div class="hint">لو مفيش تسجيلات النهارده، سيبها فاضية وابعت الأرقام بس.</div>
+  </div>
+
+  <button class="submit" id="send" onclick="submitReport()">إرسال التقرير</button>
+  <div class="hint" style="text-align:center;margin-top:10px">لو بعتّ غلط، ابعت تاني لنفس اليوم — آخر إرسال هو اللي بيتحسب.</div>
+</div>
+
+<script>
+const SB = 'https://vrrpkgcghtcfyfilwwzs.supabase.co/rest/v1/';
+const KEY = 'sb_publishable_R_Eeql_At_TFGhJ_DchDHA_Dc3SrPdw';
+const TYPES = [['whatsapp','واتساب'],['lead_form','ليد فورم'],['gateway','بوابة'],['paypal','باي بال']];
+const MAIN = ['مصر','ليبيا','فلسطين','اليمن','المغرب','سوريا','الأردن','الجزائر','العراق','السعودية','السودان','تونس','تركيا','الإمارات','الكويت','قطر','عُمان','البحرين','موريتانيا','لبنان'];
+let countries = MAIN.slice();
+let regs = [];
+let selDate = null;
+
+const $ = id => document.getElementById(id);
+function cairoToday(){ return new Intl.DateTimeFormat('en-CA', {timeZone:'Africa/Cairo', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date()); }
+function addDays(s, n){ const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0,10); }
+function dShort(s){ const [y,m,d] = s.split('-'); return +d + '/' + +m; }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function store(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function recall(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+
+async function init(){
+  // dates: today + 3 days back
+  const t = cairoToday();
+  const labels = ['النهارده', 'امبارح', 'من يومين', 'من 3 أيام'];
+  $('dates').innerHTML = labels.map((l, i) => { const d = addDays(t, -i); return `<button data-d="${d}" class="${i===0?'on':''}">${l}<br><small>${dShort(d)}</small></button>`; }).join('');
+  selDate = t;
+  $('dates').querySelectorAll('button').forEach(b => b.onclick = () => {
+    selDate = b.dataset.d;
+    $('dates').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  });
+  try {
+    const [lines, cmap] = await Promise.all([
+      fetch(SB + 'wa_lines?select=route_id,rep_name,market,active&active=eq.true&route_id=neq.lead_form&order=market.asc', {headers:{apikey:KEY}}).then(r => r.json()),
+      fetch(SB + 'country_map?select=name_ar', {headers:{apikey:KEY}}).then(r => r.json())
+    ]);
+    const extra = [...new Set(cmap.map(c => c.name_ar))].filter(n => !MAIN.includes(n) && !n.includes('(IL)') && n !== 'غير معروف').sort((a, b) => a.localeCompare(b, 'ar'));
+    countries = MAIN.concat(extra);
+    $('rep').innerHTML = '<option value="">— اختار اسمك —</option>' + lines.map(l => `<option value="${esc(l.route_id)}">${esc(l.rep_name)} — ${esc(l.market || '')}</option>`).join('');
+    const last = recall('aq_rep'); if (last && lines.some(l => l.route_id === last)) $('rep').value = last;
+  } catch(e){ showMsg('err', 'تعذّر تحميل البيانات — تأكد من الإنترنت وحدّث الصفحة.'); }
+  $('rec').oninput = $('han').oninput = checkHandled;
+  renderRegs();
+}
+
+function checkHandled(){
+  const r = Number($('rec').value), h = Number($('han').value);
+  $('hanWarn').style.display = ($('rec').value !== '' && $('han').value !== '' && h > r) ? 'block' : 'none';
+}
+
+function addReg(){ regs.push({country:'', other:'', type:'whatsapp', count:1}); renderRegs(); }
+function delReg(i){ regs.splice(i, 1); renderRegs(); }
+function step(i, d){ regs[i].count = Math.max(1, Math.min(200, regs[i].count + d)); renderRegs(); }
+function setType(i, t){ regs[i].type = t; renderRegs(); }
+function setCountry(i, v){ regs[i].country = v; renderRegs(); }
+function setOther(i, v){ regs[i].other = v; updateTotal(); }
+
+function renderRegs(){
+  $('regs').innerHTML = regs.map((r, i) => `
+    <div class="reg">
+      <div class="top">
+        <select onchange="setCountry(${i}, this.value)">
+          <option value="">— الدولة —</option>
+          ${countries.map(c => `<option ${r.country === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+          <option value="__other" ${r.country === '__other' ? 'selected' : ''}>دولة تانية…</option>
+        </select>
+        <button class="del" onclick="delReg(${i})" aria-label="حذف">×</button>
+      </div>
+      <input class="other" style="display:${r.country === '__other' ? 'block' : 'none'}" placeholder="اكتب اسم الدولة" value="${esc(r.other)}" oninput="setOther(${i}, this.value)">
+      <div class="types">${TYPES.map(([k, l]) => `<button class="${r.type === k ? 'on' : ''}" onclick="setType(${i}, '${k}')">${l}</button>`).join('')}</div>
+      <div class="stepper"><button onclick="step(${i}, -1)">−</button><span>${r.count}</span><button onclick="step(${i}, 1)">+</button></div>
+    </div>`).join('');
+  updateTotal();
+}
+function updateTotal(){ $('tot').textContent = regs.reduce((s, r) => s + r.count, 0); }
+
+function showMsg(kind, html){ const m = $('msg'); m.className = 'msg ' + kind; m.innerHTML = html; window.scrollTo({top:0, behavior:'smooth'}); }
+
+async function submitReport(){
+  const route = $('rep').value, code = $('code').value.trim();
+  const rec = $('rec').value, han = $('han').value;
+  if (!route) return showMsg('err', 'اختار اسمك الأول.');
+  if (!/^\d{6}$/.test(code)) return showMsg('err', 'الكود لازم يكون 6 أرقام.');
+  if (rec === '' || han === '') return showMsg('err', 'اكتب أرقام "وصل" و"اتردّ" (لو صفر اكتب 0).');
+  const items = [];
+  for (const r of regs){
+    const country = r.country === '__other' ? r.other.trim() : r.country;
+    if (!country || country.length < 2) return showMsg('err', 'في سطر تسجيلات من غير دولة — اختارها أو امسح السطر.');
+    items.push({country, route_type: r.type, count: r.count});
+  }
+  const btn = $('send'); btn.disabled = true; btn.textContent = 'جاري الإرسال…';
+  try {
+    const res = await fetch(SB + 'rpc/submit_rep_report', {
+      method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
+      body: JSON.stringify({p_route_id: route, p_code: code, p_date: selDate, p_received: Number(rec), p_handled: Number(han), p_regs: items})
+    });
+    const out = await res.json();
+    if (!res.ok) throw new Error(out.message || ('HTTP ' + res.status));
+    if (!out.ok) return showMsg('err', '✖ ' + esc(out.error));
+    store('aq_rep', route);
+    const typeName = Object.fromEntries(TYPES);
+    const lines = items.length ? items.map(i => `${esc(i.country)} · ${typeName[i.route_type]} · ${i.count}`).join('<br>') : 'مفيش تسجيلات';
+    showMsg('ok', `✔ اتسجل تقرير يوم <b>${dShort(out.date)}</b><br>وصل ${out.received} · اتردّ ${out.handled} · تسجيلات <b>${out.total_regs}</b><br><small>${lines}</small>`);
+    $('code').value = '';
+  } catch(e){
+    showMsg('err', '✖ الإرسال ماتمش: ' + esc(e.message) + ' — جرّب تاني.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'إرسال التقرير';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
