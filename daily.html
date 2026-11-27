@@ -164,6 +164,7 @@ input.t:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);
       <div class="saved" id="saved">✎ إنت بعت تقرير اليوم ده قبل كده، ودي الأرقام اللي بعتها. لو عدّلت وبعت، التعديل هو اللي يتحسب.</div>
       <div class="fn"><div class="ic">💬</div><div class="tx">محادثات جديدة من الإعلان<small>من غير المتابعة القديمة</small></div><input id="f_new" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="fn sub"><div class="ic">🔕</div><div class="tx">منهم ماردّوش بعد أول رسالة</div><input id="f_noreply" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+      <div class="fn sub"><div class="ic">🙋</div><div class="tx">اتفاعلوا ولسه موصلوش للسعر<small>مهتمين أو كمّلوا في المحادثة لمرحلة ما</small></div><input id="f_eng" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="fn sub"><div class="ic">🏷️</div><div class="tx">منهم وصلوا لمرحلة السعر</div><input id="f_price" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="fn sub"><div class="ic">✋</div><div class="tx">من اللي وصلوا للسعر، اعتذروا بسبب السعر</div><input id="f_obj" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="fn sub"><div class="ic">💳</div><div class="tx">منهم أخدوا طرق الدفع</div><input id="f_pay" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
@@ -207,7 +208,7 @@ const COUNTRIES = [ // code, name, flag, dial
 const EXTRA_DIALS = [['🇵🇸','972'],['🇨🇦','1'],['🇬🇧','44'],['🇩🇪','49']];
 const PAY = ['فودافون كاش','إنستاباي','كارت / بوابة الدفع','تحويل بنكي','تاني'];
 const WHOM = ['لنفسه','لابنه / بنته','للاتنين'];
-const F = ['f_new','f_noreply','f_price','f_obj','f_pay'];
+const F = ['f_new','f_noreply','f_eng','f_price','f_obj','f_pay'];
 let reps = [], country = null, me = null, videos = [], regs = [], selDate = null;
 
 const $ = id => document.getElementById(id);
@@ -307,7 +308,7 @@ async function loadDay(){
     const out = await rpc('rep_get_day', {p_rep: me.rep_id, p_date: selDate});
     if (out.day){
       const d = out.day;
-      [$('f_new').value,$('f_noreply').value,$('f_price').value,$('f_obj').value,$('f_pay').value] = [d.new_convs,d.no_reply,d.reached_price,d.price_objection,d.got_payment];
+      [$('f_new').value,$('f_noreply').value,$('f_eng').value,$('f_price').value,$('f_obj').value,$('f_pay').value] = [d.new_convs,d.no_reply,d.engaged ?? '',d.reached_price,d.price_objection,d.got_payment];
       $('f_note').value = d.note || ''; $('saved').style.display = 'block';
       regs = (out.regs || []).map(x => ({last4:x.last4||'', video_id:x.video_id||'', payment_method:x.payment_method||'', for_whom:x.for_whom||''}));
     }
@@ -326,14 +327,16 @@ function parseNum(raw){
 function nums(){ return F.map(id => parseNum($(id).value)); }
 function failAt(el, html){ showMsg('err', html); const be = $('barErr'); be.textContent = html; be.style.display = 'block'; if (el){ el.classList && el.classList.add('bad'); setTimeout(() => { el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus && el.focus(); }, 350); } }
 function checkNums(){
-  const [n, nr, p, o, pay] = nums(); let msg = '';
+  const [n, nr, en, p, o, pay] = nums(); let msg = '';
   F.forEach(id => $(id).classList.remove('bad'));
   const bad = (id, t) => { $(id).classList.add('bad'); msg = msg || t; };
-  F.forEach((id, i) => { if (Number.isNaN([n, nr, p, o, pay][i])) bad(id, 'اكتب رقم واحد بس (مثلاً 18)، لو مش متأكد اكتب رقم تقريبي.'); });
+  F.forEach((id, i) => { if (Number.isNaN([n, nr, en, p, o, pay][i])) bad(id, 'اكتب رقم واحد بس (مثلاً 18)، لو مش متأكد اكتب رقم تقريبي.'); });
   if (n !== null){
     if (nr !== null && nr > n) bad('f_noreply', 'اللي ماردّوش أكتر من المحادثات الجديدة.');
     if (p !== null && p > n) bad('f_price', 'اللي وصلوا للسعر أكتر من المحادثات الجديدة.');
     if (pay !== null && pay > n) bad('f_pay', 'اللي أخدوا طرق الدفع أكتر من المحادثات الجديدة.');
+    if (en !== null && en > n) bad('f_eng', 'اللي اتفاعلوا أكتر من المحادثات الجديدة.');
+    if (nr !== null && en !== null && p !== null && !Number.isNaN(nr + en + p) && nr + en + p > n) bad('f_eng', `ماردّوش + اتفاعلوا + وصلوا للسعر = ${nr + en + p}، وده أكتر من المحادثات الجديدة (${n}). كل شخص يتحسب في خانة واحدة بس.`);
   }
   if (p !== null && o !== null && o > p) bad('f_obj', 'اللي اعتذروا بسبب السعر لازم يكونوا من اللي وصلوا للسعر.');
   $('numErr').textContent = msg; $('numErr').style.display = msg ? 'block' : 'none';
@@ -368,7 +371,7 @@ async function submitDay(){
   $('barErr').style.display = 'none';
   const v = nums();
   const empty = v.findIndex(x => x === null);
-  if (empty >= 0) return failAt($(F[empty]), 'املا الأرقام الخمسة (لو صفر اكتب 0).');
+  if (empty >= 0) return failAt($(F[empty]), 'املا كل الأرقام (لو صفر اكتب 0).');
   const badI = v.findIndex(x => Number.isNaN(x) || x < 0);
   if (badI >= 0) return failAt($(F[badI]), 'الخانة دي لازم يكون فيها رقم واحد (مثلاً 18). لو كتبت مدى زي 15-20 هنحسب المتوسط لوحده.');
   if (!checkNums()) return failAt(document.querySelector('.fn input.bad'), $('numErr').textContent);
@@ -381,7 +384,7 @@ async function submitDay(){
   }
   const btn = $('send'); btn.disabled = true; btn.textContent = 'جاري الإرسال…';
   try {
-    const out = await rpc('rep_submit_day', {p_rep:me.rep_id, p_date:selDate, p_new:v[0], p_no_reply:v[1], p_price:v[2], p_objection:v[3], p_payment:v[4],
+    const out = await rpc('rep_submit_day', {p_rep:me.rep_id, p_date:selDate, p_new:v[0], p_no_reply:v[1], p_engaged:v[2], p_price:v[3], p_objection:v[4], p_payment:v[5],
       p_note:$('f_note').value, p_regs: regs.map(r => ({last4:r.last4, video_id:Number(r.video_id), payment_method:r.payment_method, for_whom:r.for_whom}))});
     if (!out.ok) return showMsg('err', '✖ ' + esc(out.error));
     $('doneTxt').innerHTML = `تقرير يوم <b>${dShort(selDate)}</b> وصل.<br>لو عايز تعدّل، ابعت تاني لنفس اليوم.`;
