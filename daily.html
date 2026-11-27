@@ -79,6 +79,7 @@ input.t:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);
 
 /* payers */
 .payer{border:1.5px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;position:relative}
+.payer.bad{border-color:var(--red);background:var(--red-soft)}
 .payer .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .payer .hd b{color:var(--navy);font-size:14.5px}
 .payer .del{background:var(--red-soft);color:var(--red);border:none;border-radius:8px;padding:4px 10px;font-size:13px}
@@ -96,6 +97,7 @@ input.t:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);
 .bar .in{max-width:540px;margin:0 auto}
 .submit{width:100%;padding:15px;background:var(--gold);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;box-shadow:0 3px 10px rgba(201,162,74,.35)}
 .submit:disabled{opacity:.6}
+.barErr{display:none;color:var(--red);font-size:13px;text-align:center;margin-bottom:8px;line-height:1.5}
 
 /* messages */
 .toast{display:none;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px;line-height:1.7}
@@ -160,11 +162,11 @@ input.t:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);
     <div class="card">
       <div class="step"><div class="n">4</div><h3>الناس الجديدة من الإعلان<small>تقريبي عادي، مش لازم تعدّ بالواحد</small></h3></div>
       <div class="saved" id="saved">✎ إنت بعت تقرير اليوم ده قبل كده، ودي الأرقام اللي بعتها. لو عدّلت وبعت، التعديل هو اللي يتحسب.</div>
-      <div class="fn"><div class="ic">💬</div><div class="tx">محادثات جديدة من الإعلان<small>من غير المتابعة القديمة</small></div><input id="f_new" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-      <div class="fn sub"><div class="ic">🔕</div><div class="tx">منهم ماردّوش بعد أول رسالة</div><input id="f_noreply" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-      <div class="fn sub"><div class="ic">🏷️</div><div class="tx">منهم وصلوا لمرحلة السعر</div><input id="f_price" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-      <div class="fn sub"><div class="ic">✋</div><div class="tx">من اللي وصلوا للسعر، اعتذروا بسبب السعر</div><input id="f_obj" type="number" inputmode="numeric" min="0" placeholder="0"></div>
-      <div class="fn sub"><div class="ic">💳</div><div class="tx">منهم أخدوا طرق الدفع</div><input id="f_pay" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      <div class="fn"><div class="ic">💬</div><div class="tx">محادثات جديدة من الإعلان<small>من غير المتابعة القديمة</small></div><input id="f_new" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+      <div class="fn sub"><div class="ic">🔕</div><div class="tx">منهم ماردّوش بعد أول رسالة</div><input id="f_noreply" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+      <div class="fn sub"><div class="ic">🏷️</div><div class="tx">منهم وصلوا لمرحلة السعر</div><input id="f_price" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+      <div class="fn sub"><div class="ic">✋</div><div class="tx">من اللي وصلوا للسعر، اعتذروا بسبب السعر</div><input id="f_obj" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+      <div class="fn sub"><div class="ic">💳</div><div class="tx">منهم أخدوا طرق الدفع</div><input id="f_pay" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="err" id="numErr"></div>
     </div>
 
@@ -190,7 +192,7 @@ input.t:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);
   </div>
 </div>
 
-<div class="bar hidden" id="bar"><div class="in"><button class="submit" id="send" onclick="submitDay()">إرسال التقرير</button></div></div>
+<div class="bar hidden" id="bar"><div class="in"><div class="barErr" id="barErr"></div><button class="submit" id="send" onclick="submitDay()">إرسال التقرير</button></div></div>
 
 <script>
 const SB = 'https://vrrpkgcghtcfyfilwwzs.supabase.co/rest/v1/';
@@ -313,11 +315,21 @@ async function loadDay(){
   renderRegs(); checkNums();
 }
 
-function nums(){ return F.map(id => $(id).value === '' ? null : Number($(id).value)); }
+function parseNum(raw){
+  let t = String(raw || '').trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/\s+/g, '');
+  if (t === '') return null;
+  let m = t.match(/^(\d+)[-–—_/~:إلىو]+(\d+)$/);            // مدى زي 15-20 → المتوسط
+  if (m) return Math.round((Number(m[1]) + Number(m[2])) / 2);
+  m = t.match(/^(\d+)\+?$/);                                  // 20 أو 20+
+  return m ? Number(m[1]) : NaN;
+}
+function nums(){ return F.map(id => parseNum($(id).value)); }
+function failAt(el, html){ showMsg('err', html); const be = $('barErr'); be.textContent = html; be.style.display = 'block'; if (el){ el.classList && el.classList.add('bad'); setTimeout(() => { el.scrollIntoView({behavior:'smooth', block:'center'}); el.focus && el.focus(); }, 350); } }
 function checkNums(){
   const [n, nr, p, o, pay] = nums(); let msg = '';
   F.forEach(id => $(id).classList.remove('bad'));
   const bad = (id, t) => { $(id).classList.add('bad'); msg = msg || t; };
+  F.forEach((id, i) => { if (Number.isNaN([n, nr, p, o, pay][i])) bad(id, 'اكتب رقم واحد بس (مثلاً 18)، لو مش متأكد اكتب رقم تقريبي.'); });
   if (n !== null){
     if (nr !== null && nr > n) bad('f_noreply', 'اللي ماردّوش أكتر من المحادثات الجديدة.');
     if (p !== null && p > n) bad('f_price', 'اللي وصلوا للسعر أكتر من المحادثات الجديدة.');
@@ -353,15 +365,19 @@ function renderRegs(){
 }
 
 async function submitDay(){
+  $('barErr').style.display = 'none';
   const v = nums();
-  if (v.some(x => x === null)) return showMsg('err', 'املا الأرقام الخمسة (لو صفر اكتب 0).');
-  if (v.some(x => !Number.isInteger(x) || x < 0)) return showMsg('err', 'الأرقام لازم تكون أعداد صحيحة.');
-  if (!checkNums()) return showMsg('err', $('numErr').textContent);
+  const empty = v.findIndex(x => x === null);
+  if (empty >= 0) return failAt($(F[empty]), 'املا الأرقام الخمسة (لو صفر اكتب 0).');
+  const badI = v.findIndex(x => Number.isNaN(x) || x < 0);
+  if (badI >= 0) return failAt($(F[badI]), 'الخانة دي لازم يكون فيها رقم واحد (مثلاً 18). لو كتبت مدى زي 15-20 هنحسب المتوسط لوحده.');
+  if (!checkNums()) return failAt(document.querySelector('.fn input.bad'), $('numErr').textContent);
   for (let i = 0; i < regs.length; i++){
     const r = regs[i];
-    if (!r.video_id) return showMsg('err', `رقم ${i+1}: اختار جه من أنهي فيديو (لو مش عارف اختار "مش عارف").`);
-    if (!r.payment_method) return showMsg('err', `رقم ${i+1}: اختار طريقة الدفع.`);
-    if (r.last4 && !/^\d{4}$/.test(r.last4)) return showMsg('err', `رقم ${i+1}: آخر 4 أرقام لازم يكونوا 4.`);
+    const card = document.querySelectorAll('.payer')[i];
+    if (!r.video_id) return failAt(card, `رقم ${i+1}: اختار جه من أنهي فيديو (لو مش عارف اختار "مش عارف").`);
+    if (!r.payment_method) return failAt(card, `رقم ${i+1}: اختار طريقة الدفع.`);
+    if (r.last4 && !/^\d{4}$/.test(r.last4)) return failAt(card, `رقم ${i+1}: آخر 4 أرقام لازم يكونوا 4.`);
   }
   const btn = $('send'); btn.disabled = true; btn.textContent = 'جاري الإرسال…';
   try {
