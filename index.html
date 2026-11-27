@@ -208,6 +208,10 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
         <button class="tab-btn" data-r="0">من البداية</button>
       </div>
       <div class="meta" id="rdMeta"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 12px">
+        <button class="btn" style="margin:0" onclick="exportDays()">⬇ تحميل التقارير اليومية (Excel)</button>
+        <button class="btn" style="margin:0;background:var(--navy)" onclick="exportRegs()">⬇ تحميل اللي دفعوا (Excel)</button>
+      </div>
       <div class="tbl-scroll"><table>
         <thead><tr><th>المندوب</th><th>سلّم</th><th>محادثات Meta</th><th>سجّلها</th><th>ماردّوش</th><th>وصلوا للسعر</th><th>اعتذار السعر</th><th>طرق الدفع</th><th>دفعوا</th><th>التحويل</th><th>الصرف</th><th>تكلفة التسجيل</th></tr></thead>
         <tbody id="rdBody"></tbody>
@@ -226,6 +230,13 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
       <div class="tbl-scroll"><table>
         <thead><tr><th>الفيديو</th><th>المندوب</th><th>الجمهور</th><th>آخر 7 أيام</th><th>من البداية</th></tr></thead>
         <tbody id="rdVid"></tbody>
+      </table></div>
+    </div>
+    <div class="panel">
+      <h3>اللي دفعوا — حسب تقارير المناديب</h3>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>التاريخ</th><th>المندوب</th><th>الفيديو</th><th>الجمهور</th><th>طريقة الدفع</th><th>الكورس لمين</th><th>آخر 4 أرقام</th></tr></thead>
+        <tbody id="rdRegs"></tbody>
       </table></div>
     </div>
     <div class="panel">
@@ -658,16 +669,17 @@ function renderHealthBanner(today){
 }
 
 /* ---------- تقرير المناديب اليومي ---------- */
-let rd = {rows:[], vids:[], alerts:[], start:null, range:7};
+let rd = {rows:[], vids:[], alerts:[], regs:[], start:null, range:7, from:null, end:null};
 async function loadReps(){
   try {
-    const [rows, vids, alerts, cfg] = await Promise.all([
+    const [rows, vids, alerts, cfg, regsList] = await Promise.all([
       q('rep_daily_v1?select=*&order=date.desc'),
       q('rep_video_v1?select=*'),
       q('rep_alerts_v1?select=*'),
-      q('config?select=value&key=eq.rep_daily_start')
+      q('config?select=value&key=eq.rep_daily_start'),
+      q('rep_regs_v1?select=*&order=date.desc,created_at.desc')
     ]);
-    rd.rows = rows; rd.vids = vids; rd.alerts = alerts; rd.start = cfg[0] ? cfg[0].value : null;
+    rd.rows = rows; rd.vids = vids; rd.alerts = alerts; rd.start = cfg[0] ? cfg[0].value : null; rd.regs = regsList;
     renderReps();
   } catch(e){
     document.getElementById('rdBody').innerHTML = `<tr><td colspan="12" class="empty">تعذّر تحميل تقارير المناديب (${e.message})</td></tr>`;
@@ -683,6 +695,10 @@ function renderReps(){
   const ef = rd.start && from < rd.start ? rd.start : from;
   const expDays = Math.max(0, diffDays(ef, end) + 1);
   setText('rdMeta', `الفترة: ${dShort(ef)} – ${dShort(end)}`);
+  rd.from = ef; rd.end = end;
+  const pr = rd.regs.filter(r => r.date >= ef && r.date <= end);
+  document.getElementById('rdRegs').innerHTML = pr.length ? pr.map(r => `<tr><td>${dShort(r.date)}</td><td class="name">${esc2(r.rep_name)}</td><td>${esc2(r.video || '—')}</td><td>${esc2(r.audience || '—')}</td><td>${esc2(r.payment_method || '—')}</td><td>${esc2(r.for_whom || '—')}</td><td>${esc2(r.last4 || '—')}</td></tr>`).join('')
+    : '<tr><td colspan="7" class="empty">مفيش حد دفع في الفترة دي.</td></tr>';
   // alerts
   const box = document.getElementById('rdAlerts');
   if (rd.alerts.length){
@@ -726,6 +742,25 @@ function renderReps(){
     ${r.reported ? `<td>${fmtInt(r.new_convs)}</td><td>${fmtInt(r.no_reply)}</td><td>${fmtInt(r.reached_price)}</td><td>${fmtInt(r.price_objection)}</td><td>${fmtInt(r.got_payment)}</td>` : '<td colspan="5"><span class="st-wait">ماسلّمش</span></td>'}
     <td><b>${fmtInt(r.regs)}</b></td><td>${r.spend == null ? '—' : fmtMoney(r.spend)}</td><td style="white-space:normal;text-align:right;max-width:260px">${esc2(r.note || '')}</td></tr>`).join('')
     : '<tr><td colspan="11" class="empty">—</td></tr>';
+}
+function downloadCsv(name, header, rows){
+  const cell = v => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+  const csv = '﻿' + [header, ...rows].map(r => r.map(cell).join(',')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = name; document.body.appendChild(a); a.click(); a.remove();
+}
+function exportDays(){
+  const rows = rd.rows.filter(r => r.date >= rd.from && r.date <= rd.end).sort((a, b) => a.date.localeCompare(b.date) || String(a.rep_name).localeCompare(String(b.rep_name), 'ar'));
+  downloadCsv(`تقارير_المناديب_${rd.from}_${rd.end}.csv`,
+    ['التاريخ','المندوب','سلّم تقرير','محادثات Meta','محادثات جديدة','ماردّوش','وصلوا للسعر','اعتذروا بسبب السعر','أخدوا طرق الدفع','دفعوا','دفعوا من بارد','دفعوا من دافي','الصرف $','صرف بارد $','صرف دافي $','ملاحظة'],
+    rows.map(r => [r.date, r.rep_name, r.reported ? 'نعم' : 'لا', r.meta_conv, r.new_convs, r.no_reply, r.reached_price, r.price_objection, r.got_payment, r.regs, r.regs_cold, r.regs_warm, r.spend, r.spend_cold, r.spend_warm, r.note]));
+}
+function exportRegs(){
+  const rows = rd.regs.filter(r => r.date >= rd.from && r.date <= rd.end).sort((a, b) => a.date.localeCompare(b.date));
+  downloadCsv(`اللي_دفعوا_${rd.from}_${rd.end}.csv`,
+    ['التاريخ','المندوب','السوق','الفيديو','الجمهور','طريقة الدفع','الكورس لمين','آخر 4 أرقام'],
+    rows.map(r => [r.date, r.rep_name, r.market, r.video, r.audience, r.payment_method, r.for_whom, r.last4]));
 }
 document.querySelectorAll('#rdRange .tab-btn').forEach(b => b.addEventListener('click', () => {
   rd.range = Number(b.dataset.r);
