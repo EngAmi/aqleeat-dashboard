@@ -200,7 +200,7 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
     <div class="alerts" id="rdAlerts"><h4>⚠ تنبيهات المناديب</h4><ul id="rdAlertList"></ul></div>
     <div class="panel">
       <h3>تقرير آخر اليوم — ملخص كل مندوب</h3>
-      <div class="hint">المناديب بيملوا <a href="daily.html" style="color:var(--navy);font-weight:700">صفحة تقرير آخر اليوم ←</a> · الصرف ومحادثات Meta بيتسحبوا أوتوماتيك لكل ad set (صرف اليوم بيظهر الصبح اللي بعده) · النسب من المحادثات الجديدة اللي المندوب سجّلها، واعتذار السعر من اللي وصلوا للسعر.</div>
+      <div class="hint">المناديب بيملوا <a href="daily.html" style="color:var(--navy);font-weight:700">صفحة تقرير آخر اليوم ←</a> · الصرف ومحادثات Meta بيتسحبوا أوتوماتيك لكل ad set (صرف اليوم بيظهر الصبح اللي بعده) · النسب من المحادثات الجديدة اللي المندوب سجّلها، واعتذار السعر من اللي وصلوا للسعر. "اتفاعلوا" = اتكلموا ولسه موصلوش للسعر (من 28/11).</div>
       <div class="tabs" id="rdRange" style="margin:0 0 10px">
         <button class="tab-btn" data-r="1">امبارح</button>
         <button class="tab-btn active" data-r="7">آخر 7 أيام</button>
@@ -213,7 +213,7 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
         <button class="btn" style="margin:0;background:var(--navy)" onclick="exportRegs()">⬇ تحميل اللي دفعوا (Excel)</button>
       </div>
       <div class="tbl-scroll"><table>
-        <thead><tr><th>المندوب</th><th>سلّم</th><th>محادثات Meta</th><th>سجّلها</th><th>ماردّوش</th><th>وصلوا للسعر</th><th>اعتذار السعر</th><th>طرق الدفع</th><th>دفعوا</th><th>التحويل</th><th>الصرف</th><th>تكلفة التسجيل</th></tr></thead>
+        <thead><tr><th>المندوب</th><th>سلّم</th><th>محادثات Meta</th><th>سجّلها</th><th>ماردّوش</th><th>اتفاعلوا</th><th>وصلوا للسعر</th><th>اعتذار السعر</th><th>طرق الدفع</th><th>دفعوا</th><th>التحويل</th><th>الصرف</th><th>تكلفة التسجيل</th></tr></thead>
         <tbody id="rdBody"></tbody>
       </table></div>
     </div>
@@ -242,7 +242,7 @@ td.over{color:var(--red);font-weight:700}td.under{color:var(--green);font-weight
     <div class="panel">
       <h3>التقارير يوم بيوم</h3>
       <div class="tbl-scroll"><table>
-        <thead><tr><th>التاريخ</th><th>المندوب</th><th>Meta</th><th>جديدة</th><th>ماردّوش</th><th>السعر</th><th>اعتذار</th><th>طرق الدفع</th><th>دفعوا</th><th>الصرف</th><th>ملاحظة</th></tr></thead>
+        <thead><tr><th>التاريخ</th><th>المندوب</th><th>Meta</th><th>جديدة</th><th>ماردّوش</th><th>اتفاعلوا</th><th>السعر</th><th>اعتذار</th><th>طرق الدفع</th><th>دفعوا</th><th>الصرف</th><th>ملاحظة</th></tr></thead>
         <tbody id="rdDays"></tbody>
       </table></div>
     </div>
@@ -708,21 +708,21 @@ function renderReps(){
   // per rep
   const agg = {};
   inR.forEach(r => {
-    const a = agg[r.rep_name] = agg[r.rep_name] || {days:0, meta:0, n:0, nr:0, p:0, o:0, pay:0, regs:0, sp:0, spc:0, spw:0, rc:0, rw:0};
-    if (r.reported){ a.days++; a.n += N(r.new_convs); a.nr += N(r.no_reply); a.p += N(r.reached_price); a.o += N(r.price_objection); a.pay += N(r.got_payment); }
+    const a = agg[r.rep_name] = agg[r.rep_name] || {days:0, meta:0, n:0, nr:0, en:0, enN:0, p:0, o:0, pay:0, regs:0, sp:0, spc:0, spw:0, rc:0, rw:0};
+    if (r.reported){ a.days++; a.n += N(r.new_convs); a.nr += N(r.no_reply); if (r.engaged != null){ a.en += N(r.engaged); a.enN += N(r.new_convs); } a.p += N(r.reached_price); a.o += N(r.price_objection); a.pay += N(r.got_payment); }
     a.meta += N(r.meta_conv); a.regs += N(r.regs); a.sp += N(r.spend); a.spc += N(r.spend_cold); a.spw += N(r.spend_warm); a.rc += N(r.regs_cold); a.rw += N(r.regs_warm);
   });
   const names = Object.keys(agg).sort();
   const body = document.getElementById('rdBody');
   if (!names.length){
-    body.innerHTML = '<tr><td colspan="12" class="empty">لسه مفيش تقارير في الفترة دي. بتظهر أول ما المناديب يبعتوا من صفحة تقرير آخر اليوم.</td></tr>';
+    body.innerHTML = '<tr><td colspan="13" class="empty">لسه مفيش تقارير في الفترة دي. بتظهر أول ما المناديب يبعتوا من صفحة تقرير آخر اليوم.</td></tr>';
   } else {
-    const T = {days:0, meta:0, n:0, nr:0, p:0, o:0, pay:0, regs:0, sp:0};
+    const T = {days:0, meta:0, n:0, nr:0, en:0, enN:0, p:0, o:0, pay:0, regs:0, sp:0};
     const row = (nm, a, tot) => {
       const cpa = a.regs ? fmtMoney(a.sp / a.regs) : (a.sp ? '<span class="st-bad">0 تسجيل</span>' : '—');
       const gap = a.meta && a.n < 0.7 * a.meta ? ' class="over"' : '';
       return `<tr${tot ? ' class="tot"' : ''}><td class="name">${nm}</td><td>${tot ? '' : a.days + '/' + expDays}</td><td>${fmtInt(a.meta)}</td><td${gap}>${fmtInt(a.n)}</td>
-        <td>${pct(a.nr, a.n)}</td><td>${pct(a.p, a.n)}</td><td>${pct(a.o, a.p)}</td><td>${pct(a.pay, a.n)}</td>
+        <td>${pct(a.nr, a.n)}</td><td>${pct(a.en, a.enN)}</td><td>${pct(a.p, a.n)}</td><td>${pct(a.o, a.p)}</td><td>${pct(a.pay, a.n)}</td>
         <td><b>${fmtInt(a.regs)}</b></td><td>${a.n ? (a.regs / a.n * 100).toFixed(1) + '%' : '—'}</td><td>${fmtMoney(a.sp)}</td><td>${cpa}</td></tr>`;
     };
     body.innerHTML = names.map(nm => { const a = agg[nm]; Object.keys(T).forEach(k => T[k] += a[k]); return row(esc2(nm), a); }).join('') + (names.length > 1 ? row('الإجمالي', T, true) : '');
@@ -739,9 +739,9 @@ function renderReps(){
   const days = inR.slice().sort((a, b) => b.date.localeCompare(a.date) || String(a.rep_name).localeCompare(String(b.rep_name), 'ar'));
   document.getElementById('rdDays').innerHTML = days.length ? days.map(r => `<tr class="${r.reported ? '' : 'dim'}"><td>${dShort(r.date)}</td><td class="name">${esc2(r.rep_name)}</td>
     <td>${r.meta_conv == null ? '—' : fmtInt(r.meta_conv)}</td>
-    ${r.reported ? `<td>${fmtInt(r.new_convs)}</td><td>${fmtInt(r.no_reply)}</td><td>${fmtInt(r.reached_price)}</td><td>${fmtInt(r.price_objection)}</td><td>${fmtInt(r.got_payment)}</td>` : '<td colspan="5"><span class="st-wait">ماسلّمش</span></td>'}
+    ${r.reported ? `<td>${fmtInt(r.new_convs)}</td><td>${fmtInt(r.no_reply)}</td><td>${r.engaged == null ? '—' : fmtInt(r.engaged)}</td><td>${fmtInt(r.reached_price)}</td><td>${fmtInt(r.price_objection)}</td><td>${fmtInt(r.got_payment)}</td>` : '<td colspan="6"><span class="st-wait">ماسلّمش</span></td>'}
     <td><b>${fmtInt(r.regs)}</b></td><td>${r.spend == null ? '—' : fmtMoney(r.spend)}</td><td style="white-space:normal;text-align:right;max-width:260px">${esc2(r.note || '')}</td></tr>`).join('')
-    : '<tr><td colspan="11" class="empty">—</td></tr>';
+    : '<tr><td colspan="12" class="empty">—</td></tr>';
 }
 function downloadCsv(name, header, rows){
   const cell = v => { const t = v == null ? '' : String(v); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
@@ -753,8 +753,8 @@ function downloadCsv(name, header, rows){
 function exportDays(){
   const rows = rd.rows.filter(r => r.date >= rd.from && r.date <= rd.end).sort((a, b) => a.date.localeCompare(b.date) || String(a.rep_name).localeCompare(String(b.rep_name), 'ar'));
   downloadCsv(`تقارير_المناديب_${rd.from}_${rd.end}.csv`,
-    ['التاريخ','المندوب','سلّم تقرير','محادثات Meta','محادثات جديدة','ماردّوش','وصلوا للسعر','اعتذروا بسبب السعر','أخدوا طرق الدفع','دفعوا','دفعوا من بارد','دفعوا من دافي','الصرف $','صرف بارد $','صرف دافي $','ملاحظة'],
-    rows.map(r => [r.date, r.rep_name, r.reported ? 'نعم' : 'لا', r.meta_conv, r.new_convs, r.no_reply, r.reached_price, r.price_objection, r.got_payment, r.regs, r.regs_cold, r.regs_warm, r.spend, r.spend_cold, r.spend_warm, r.note]));
+    ['التاريخ','المندوب','سلّم تقرير','محادثات Meta','محادثات جديدة','ماردّوش','اتفاعلوا ولسه موصلوش للسعر','وصلوا للسعر','اعتذروا بسبب السعر','أخدوا طرق الدفع','دفعوا','دفعوا من بارد','دفعوا من دافي','الصرف $','صرف بارد $','صرف دافي $','ملاحظة'],
+    rows.map(r => [r.date, r.rep_name, r.reported ? 'نعم' : 'لا', r.meta_conv, r.new_convs, r.no_reply, r.engaged, r.reached_price, r.price_objection, r.got_payment, r.regs, r.regs_cold, r.regs_warm, r.spend, r.spend_cold, r.spend_warm, r.note]));
 }
 function exportRegs(){
   const rows = rd.regs.filter(r => r.date >= rd.from && r.date <= rd.end).sort((a, b) => a.date.localeCompare(b.date));
