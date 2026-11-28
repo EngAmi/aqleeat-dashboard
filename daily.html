@@ -167,7 +167,7 @@ input.t:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);
       <div class="fn sub"><div class="ic">🙋</div><div class="tx">اتفاعلوا ولسه موصلوش للسعر<small>مهتمين أو كمّلوا في المحادثة لمرحلة ما</small></div><input id="f_eng" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="fn sub"><div class="ic">🏷️</div><div class="tx">منهم وصلوا لمرحلة السعر</div><input id="f_price" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="fn sub"><div class="ic">✋</div><div class="tx">من اللي وصلوا للسعر، اعتذروا بسبب السعر</div><input id="f_obj" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
-      <div class="fn sub"><div class="ic">💳</div><div class="tx">منهم أخدوا طرق الدفع</div><input id="f_pay" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
+      <div class="fn sub"><div class="ic">💳</div><div class="tx">منهم طلبوا طرق الدفع<small>لسه مادفعوش — اللي دفع فعلاً يتضاف تحت في «مين دفع النهارده؟»</small></div><input id="f_pay" type="text" inputmode="numeric" autocomplete="off" placeholder="0"></div>
       <div class="err" id="numErr"></div>
     </div>
 
@@ -334,7 +334,7 @@ function checkNums(){
   if (n !== null){
     if (nr !== null && nr > n) bad('f_noreply', 'اللي ماردّوش أكتر من المحادثات الجديدة.');
     if (p !== null && p > n) bad('f_price', 'اللي وصلوا للسعر أكتر من المحادثات الجديدة.');
-    if (pay !== null && pay > n) bad('f_pay', 'اللي أخدوا طرق الدفع أكتر من المحادثات الجديدة.');
+    if (pay !== null && pay > n) bad('f_pay', 'اللي طلبوا طرق الدفع أكتر من المحادثات الجديدة.');
     if (en !== null && en > n) bad('f_eng', 'اللي اتفاعلوا أكتر من المحادثات الجديدة.');
     if (nr !== null && en !== null && p !== null && !Number.isNaN(nr + en + p) && nr + en + p > n) bad('f_eng', `ماردّوش + اتفاعلوا + وصلوا للسعر = ${nr + en + p}، وده أكتر من المحادثات الجديدة (${n}). كل شخص يتحسب في خانة واحدة بس.`);
   }
